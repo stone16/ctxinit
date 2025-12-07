@@ -51,6 +51,12 @@ export const CompileConfigSchema = z.object({
 export type CompileConfig = z.infer<typeof CompileConfigSchema>;
 
 /**
+ * Build target types
+ */
+export type BuildTarget = 'claude' | 'cursor' | 'agents';
+export const BUILD_TARGETS: BuildTarget[] = ['claude', 'cursor', 'agents'];
+
+/**
  * Conflict resolution configuration
  */
 export const ConflictResolutionSchema = z.object({
