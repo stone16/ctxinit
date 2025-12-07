@@ -3,3 +3,4 @@ export * from './schemas';
 export * from './config';
 export * from './parser';
 export * from './analysis';
+export * from './compiler';
