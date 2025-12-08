@@ -131,7 +131,7 @@ export class CursorCompiler extends BaseCompiler {
     const baseName = rule.path.replace(/\.md$/, '');
 
     // Replace path separators with dashes
-    const flatName = baseName.replace(/[\/\\]/g, '-');
+    const flatName = baseName.replace(/[/\\]/g, '-');
 
     // Sanitize: remove special characters, keep alphanumeric, dash, underscore
     const sanitized = flatName.replace(/[^a-zA-Z0-9_-]/g, '_');
