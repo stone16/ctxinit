@@ -20,16 +20,27 @@ describe('Verify Command', () => {
   });
 
   function createFileWithChecksum(filePath: string, content: string): void {
-    // The verify code calculates checksum on content WITHOUT the checksum comment
-    // So we hash the content first, then append the checksum
-    const hash = crypto.createHash('sha256').update(content + '\n').digest('hex');
-    const fullContent = `${content}\n<!-- checksum: sha256:${hash} -->`;
+    // The verify code calculates checksum on content WITHOUT the footer block
+    // The footer consists of 3 lines: metadata comment, timestamp, checksum
+    // Hash is calculated on content BEFORE adding footer (matching base-compiler.ts)
+    const hash = crypto.createHash('sha256').update(content).digest('hex');
+    const timestamp = new Date().toISOString();
+    const fullContent = `${content}
+<!-- ctx build metadata -->
+<!-- timestamp: ${timestamp} -->
+<!-- checksum: sha256:${hash} -->
+`;
     fs.writeFileSync(filePath, fullContent);
   }
 
   function createFileWithInvalidChecksum(filePath: string, content: string): void {
     const fakeHash = crypto.createHash('sha256').update('fake').digest('hex');
-    const fullContent = `${content}\n<!-- checksum: sha256:${fakeHash} -->`;
+    const timestamp = new Date().toISOString();
+    const fullContent = `${content}
+<!-- ctx build metadata -->
+<!-- timestamp: ${timestamp} -->
+<!-- checksum: sha256:${fakeHash} -->
+`;
     fs.writeFileSync(filePath, fullContent);
   }
 

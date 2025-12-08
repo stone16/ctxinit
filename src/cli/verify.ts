@@ -44,11 +44,22 @@ function extractChecksum(content: string): string | null {
 }
 
 /**
- * Calculate content checksum (excluding the checksum comment itself)
+ * Calculate content checksum (excluding the entire footer block)
+ *
+ * The footer consists of 3 lines appended AFTER the checksum is calculated:
+ *   <!-- ctx build metadata -->
+ *   <!-- timestamp: ... -->
+ *   <!-- checksum: sha256:... -->
+ *
+ * We must remove ALL of these to match the original checksum calculation.
  */
 function calculateChecksum(content: string): string {
-  // Remove any existing checksum comment for calculation
-  const cleanContent = content.replace(/<!--\s*checksum:\s*sha256:[a-f0-9]{64}\s*-->\s*/gi, '');
+  // Remove the entire footer block (metadata comment + timestamp + checksum)
+  // This matches what base-compiler.ts does: calculate checksum on content BEFORE footer
+  const cleanContent = content.replace(
+    /\n<!-- ctx build metadata -->\n<!-- timestamp: [^\n]+ -->\n<!-- checksum: sha256:[a-f0-9]{64} -->\s*$/,
+    ''
+  );
   const hash = crypto.createHash('sha256').update(cleanContent).digest('hex');
   return `sha256:${hash}`;
 }
