@@ -152,11 +152,11 @@ describe('Build Manifest', () => {
 
     it('should return true for modified file (different content)', async () => {
       const filePath = path.join(tempDir, 'modified.txt');
-      await fs.promises.writeFile(filePath, 'original');
+      await fs.promises.writeFile(filePath, 'original content here');
 
       const entry = await createManifestEntry(filePath);
 
-      // Modify the file
+      // Modify the file with different length content to ensure size change is detected
       await fs.promises.writeFile(filePath, 'modified');
 
       const changed = await hasFileChanged(filePath, entry);
@@ -195,12 +195,12 @@ describe('Build Manifest', () => {
 
     it('should detect modified files', async () => {
       const file1 = path.join(tempDir, 'file1.txt');
-      await fs.promises.writeFile(file1, 'original');
+      await fs.promises.writeFile(file1, 'original content here');
 
       const manifest = createEmptyManifest('claude');
       manifest.sources['file1.txt'] = await createManifestEntry(file1);
 
-      // Modify the file
+      // Modify the file with different length content to ensure size change is detected
       await fs.promises.writeFile(file1, 'modified');
 
       const changes = await detectChanges(tempDir, [file1], manifest);
