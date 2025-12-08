@@ -74,7 +74,7 @@ Generated: 2025-12-07
 
 ### Files Created
 
-```
+```text
 src/parser/
 ├── path-security.ts    # Path traversal protection
 ├── rule-parser.ts      # Frontmatter extraction with gray-matter
