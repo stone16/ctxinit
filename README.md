@@ -1,6 +1,26 @@
 # ctxinit
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/ctxinit.svg)](https://www.npmjs.com/package/ctxinit)
+
 A CLI tool for managing AI context files across multiple IDE targets. Compile your project context and rules into optimized formats for Claude Code, Cursor, and general AI agents.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [Writing Rules](#writing-rules)
+- [Commands](#commands)
+- [Output Formats](#output-formats)
+- [Self-Healing Features](#self-healing-features)
+- [Programmatic API](#programmatic-api)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
@@ -257,20 +277,191 @@ const result = await compiler.compile();
 
 ## Development
 
+### Prerequisites
+
+- Node.js >= 18.0.0
+- npm or yarn
+
+### Setup
+
 ```bash
+# Clone the repository
+git clone https://github.com/stone16/ctxinit.git
+cd ctxinit
+
 # Install dependencies
 npm install
 
-# Run tests
-npm test
-
-# Build
+# Build the project
 npm run build
 
+# Link for local development
+npm link
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run a specific test file
+npm test -- tests/compiler/claude-compiler.test.ts
+
+# Run tests matching a pattern
+npm test -- --testNamePattern="should compile"
+```
+
+### Code Quality
+
+```bash
 # Run linting
 npm run lint
+
+# Fix linting issues automatically
+npm run lint:fix
+
+# Check code formatting
+npm run format:check
+
+# Format code
+npm run format
 ```
+
+### Development Workflow
+
+```bash
+# Watch mode for TypeScript compilation
+npm run dev
+
+# In another terminal, test your changes
+ctx build --verbose
+```
+
+### Project Structure
+
+```
+ctxinit/
+├── bin/                  # CLI entry point
+│   └── ctx.js
+├── src/                  # Source code
+│   ├── cli/              # CLI commands
+│   ├── compiler/         # Target compilers
+│   ├── config/           # Configuration loading
+│   ├── parser/           # Rule parsing
+│   ├── build/            # Build orchestration
+│   ├── schemas/          # Zod schemas
+│   └── index.ts          # Public API exports
+├── tests/                # Test files
+│   ├── cli/              # CLI command tests
+│   ├── compiler/         # Compiler tests
+│   ├── config/           # Config tests
+│   ├── parser/           # Parser tests
+│   ├── build/            # Build tests
+│   ├── integration/      # Integration tests
+│   ├── performance/      # Performance benchmarks
+│   └── __mocks__/        # Test mocks
+├── templates/            # Template files for ctx init
+├── docs/                 # Documentation
+└── examples/             # Example projects
+```
+
+### Running the CLI Locally
+
+After building, you can run the CLI directly:
+
+```bash
+# Using npm link (recommended for development)
+npm link
+ctx --help
+
+# Or run directly
+node bin/ctx.js --help
+
+# Or use npx from the project root
+npx . --help
+```
+
+### Writing Tests
+
+Tests use Jest and follow this structure:
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
+describe('MyFeature', () => {
+  beforeEach(() => {
+    // Setup
+  });
+
+  afterEach(() => {
+    // Cleanup
+  });
+
+  it('should do something', () => {
+    // Test
+    expect(result).toBe(expected);
+  });
+});
+```
+
+### Debugging
+
+```bash
+# Run with Node.js inspector
+node --inspect-brk bin/ctx.js build
+
+# Debug tests
+node --inspect-brk node_modules/.bin/jest --runInBand
+```
+
+## Contributing
+
+We welcome contributions! Here's how you can help:
+
+### Reporting Issues
+
+- Search [existing issues](https://github.com/stone16/ctxinit/issues) first
+- Include reproduction steps, expected vs actual behavior
+- Provide your environment details (Node.js version, OS, etc.)
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes
+4. Add or update tests as needed
+5. Ensure all tests pass: `npm test`
+6. Ensure linting passes: `npm run lint`
+7. Commit with a clear message
+8. Push and open a Pull Request
+
+### Development Guidelines
+
+- Follow existing code style
+- Write tests for new features
+- Update documentation as needed
+- Keep commits focused and atomic
+- Use conventional commit messages when possible
+
+### Areas for Contribution
+
+- Bug fixes and improvements
+- New compilation targets
+- Documentation improvements
+- Performance optimizations
+- Test coverage improvements
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+**Questions?** Open an issue or start a discussion on GitHub.
