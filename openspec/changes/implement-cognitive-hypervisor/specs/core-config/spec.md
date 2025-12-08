@@ -70,9 +70,13 @@ The system SHALL support `project.md` and `architecture.md` as global context fi
 - **WHEN** `.context/architecture.md` exists
 - **THEN** its content is included in CLAUDE.md (summarized) and AGENTS.md (full)
 
-#### Scenario: Missing global context files
-- **WHEN** `project.md` or `architecture.md` do not exist
-- **THEN** the system proceeds without error, omitting those sections from output
+#### Scenario: Missing project.md file
+- **WHEN** `project.md` does not exist
+- **THEN** the system reports an error indicating project.md is required
+
+#### Scenario: Missing architecture.md file
+- **WHEN** `architecture.md` does not exist
+- **THEN** the system proceeds without error, omitting that section from output
 
 ### Requirement: Configuration Validation
 The system SHALL validate configuration file content.
