@@ -2,306 +2,306 @@
 
 Ordered implementation checklist organized by phases. Each phase ends with validation tasks that generate proof-of-work documentation in `docs/validation/`.
 
-## Phase 1: Project Foundation
+## Phase 1: Project Foundation ✅
 
 ### 1.1 Project Setup
-- [ ] 1.1.1 Initialize npm package with TypeScript
-- [ ] 1.1.2 Configure ESLint and Prettier
-- [ ] 1.1.3 Set up Jest for testing with coverage reporting
-- [ ] 1.1.4 Install core dependencies: `fast-glob`, `gray-matter`, `zod`, `commander`, `chalk`, `inquirer`
-- [ ] 1.1.5 Create directory structure: `src/`, `bin/`, `tests/`, `templates/`
-- [ ] 1.1.6 Configure package.json bin entry for unified `ctx` command
+- [x] 1.1.1 Initialize npm package with TypeScript
+- [x] 1.1.2 Configure ESLint and Prettier
+- [x] 1.1.3 Set up Jest for testing with coverage reporting
+- [x] 1.1.4 Install core dependencies: `fast-glob`, `gray-matter`, `zod`, `commander`, `chalk`, `inquirer`
+- [x] 1.1.5 Create directory structure: `src/`, `bin/`, `tests/`, `templates/`
+- [x] 1.1.6 Configure package.json bin entry for unified `ctx` command
 
 ### 1.2 Core Configuration Schema (core-config)
-- [ ] 1.2.1 Define Zod schema for `config.yaml`
-- [ ] 1.2.2 Define Zod schema for rule frontmatter (id, description, domain, globs, priority, tags)
-- [ ] 1.2.3 Implement config loader with defaults
-- [ ] 1.2.4 Create template files: `project.md`, `architecture.md`, `config.yaml`
-- [ ] 1.2.5 Write unit tests for config parsing
-- [ ] 1.2.6 Document schema in README
+- [x] 1.2.1 Define Zod schema for `config.yaml`
+- [x] 1.2.2 Define Zod schema for rule frontmatter (id, description, domain, globs, priority, tags)
+- [x] 1.2.3 Implement config loader with defaults
+- [x] 1.2.4 Create template files: `project.md`, `architecture.md`, `config.yaml`
+- [x] 1.2.5 Write unit tests for config parsing
+- [x] 1.2.6 Document schema in README
 
 ### 1.3 Phase 1 Validation
-- [ ] 1.3.1 Run `npm run build` - verify TypeScript compiles without errors
-- [ ] 1.3.2 Run `npm run lint` - verify ESLint passes
-- [ ] 1.3.3 Run `npm test` - verify all config tests pass
-- [ ] 1.3.4 Generate `docs/validation/phase1-foundation.md` with:
-  - [ ] Build output log
-  - [ ] Test coverage report (target: ≥80%)
-  - [ ] Dependency tree (`npm ls --depth=0`)
-  - [ ] Directory structure screenshot
-  - [ ] Sample config.yaml parsing output
+- [x] 1.3.1 Run `npm run build` - verify TypeScript compiles without errors
+- [x] 1.3.2 Run `npm run lint` - verify ESLint passes
+- [x] 1.3.3 Run `npm test` - verify all config tests pass
+- [x] 1.3.4 Generate `docs/validation/phase1-foundation.md` with:
+  - [x] Build output log
+  - [x] Test coverage report (target: ≥80%)
+  - [x] Dependency tree (`npm ls --depth=0`)
+  - [x] Directory structure screenshot
+  - [x] Sample config.yaml parsing output
 
 ---
 
-## Phase 2: Rule Parsing and Validation
+## Phase 2: Rule Parsing and Validation ✅
 
 ### 2.1 Rule Parser (rule-parser)
-- [ ] 2.1.1 Implement frontmatter extraction using `gray-matter`
-- [ ] 2.1.2 Implement frontmatter validation against Zod schema
-- [ ] 2.1.3 Implement content body extraction (markdown after frontmatter)
-- [ ] 2.1.4 Apply default values (priority=50)
-- [ ] 2.1.5 Implement glob inference from directory path
-- [ ] 2.1.6 Implement path traversal protection (block `..`, absolute paths, URL-encoded, null bytes)
-- [ ] 2.1.7 Implement symlink validation (target must be within project)
-- [ ] 2.1.8 Handle edge cases: empty content, malformed YAML, non-UTF8 files
-- [ ] 2.1.9 Write unit tests for parsing, validation, and path security
+- [x] 2.1.1 Implement frontmatter extraction using `gray-matter`
+- [x] 2.1.2 Implement frontmatter validation against Zod schema
+- [x] 2.1.3 Implement content body extraction (markdown after frontmatter)
+- [x] 2.1.4 Apply default values (priority=50)
+- [x] 2.1.5 Implement glob inference from directory path
+- [x] 2.1.6 Implement path traversal protection (block `..`, absolute paths, URL-encoded, null bytes)
+- [x] 2.1.7 Implement symlink validation (target must be within project)
+- [x] 2.1.8 Handle edge cases: empty content, malformed YAML, non-UTF8 files
+- [x] 2.1.9 Write unit tests for parsing, validation, and path security
 
 ### 2.2 Static Analysis (static-analysis)
-- [ ] 2.2.1 Implement schema validation check (blocking)
-- [ ] 2.2.2 Implement dead link detection for markdown links (blocking)
-- [ ] 2.2.3 Implement duplicate ID detection across rules (blocking)
-- [ ] 2.2.4 Implement circular reference detection in rule imports (blocking)
-- [ ] 2.2.5 Implement path traversal detection in references (blocking)
-- [ ] 2.2.6 Implement ghost rule detection - globs matching no files (warning)
-- [ ] 2.2.7 Implement token limit warning based on config thresholds
-- [ ] 2.2.8 Create analysis result type with errors, warnings, and file locations
-- [ ] 2.2.9 Write unit tests for each analysis rule
+- [x] 2.2.1 Implement schema validation check (blocking)
+- [x] 2.2.2 Implement dead link detection for markdown links (blocking)
+- [x] 2.2.3 Implement duplicate ID detection across rules (blocking)
+- [x] 2.2.4 Implement circular reference detection in rule imports (blocking)
+- [x] 2.2.5 Implement path traversal detection in references (blocking)
+- [x] 2.2.6 Implement ghost rule detection - globs matching no files (warning)
+- [x] 2.2.7 Implement token limit warning based on config thresholds
+- [x] 2.2.8 Create analysis result type with errors, warnings, and file locations
+- [x] 2.2.9 Write unit tests for each analysis rule
 
 ### 2.3 Phase 2 Validation
-- [ ] 2.3.1 Run full test suite - verify all parser and analysis tests pass
-- [ ] 2.3.2 Test path traversal protection with attack vectors
-- [ ] 2.3.3 Generate `docs/validation/phase2-parsing.md` with:
-  - [ ] Test coverage report for rule-parser module (target: ≥85%)
-  - [ ] Test coverage report for static-analysis module (target: ≥85%)
-  - [ ] Sample rule parsing output (valid rule)
-  - [ ] Sample error outputs for each blocking error type
-  - [ ] Security test results (path traversal, symlink attacks)
-  - [ ] Glob inference examples from different directory depths
+- [x] 2.3.1 Run full test suite - verify all parser and analysis tests pass
+- [x] 2.3.2 Test path traversal protection with attack vectors
+- [x] 2.3.3 Generate `docs/validation/phase2-parsing.md` with:
+  - [x] Test coverage report for rule-parser module (target: ≥85%)
+  - [x] Test coverage report for static-analysis module (target: ≥85%)
+  - [x] Sample rule parsing output (valid rule)
+  - [x] Sample error outputs for each blocking error type
+  - [x] Security test results (path traversal, symlink attacks)
+  - [x] Glob inference examples from different directory depths
 
 ---
 
-## Phase 3: Compilation Engine
+## Phase 3: Compilation Engine ✅
 
 ### 3.1 Compilation Core (compilation-engine)
-- [ ] 3.1.1 Implement content-aware token estimation:
-  - [ ] 3.1.1a Detect content type (prose, code, mixed, CJK)
-  - [ ] 3.1.1b Apply ratio: prose=3.5, code=2.5, mixed=3.0, CJK=1.5
-  - [ ] 3.1.1c Reserve 5% margin for metadata overhead
-- [ ] 3.1.2 Implement rule selection by directory filter
-- [ ] 3.1.3 Implement rule selection by glob matching
-- [ ] 3.1.4 Implement rule selection by priority sorting
-- [ ] 3.1.5 Implement rule selection by tag filter
-- [ ] 3.1.6 Create compiler interface/abstract class
-- [ ] 3.1.7 Write unit tests for token estimation accuracy
+- [x] 3.1.1 Implement content-aware token estimation:
+  - [x] 3.1.1a Detect content type (prose, code, mixed, CJK)
+  - [x] 3.1.1b Apply ratio: prose=3.5, code=2.5, mixed=3.0, CJK=1.5
+  - [x] 3.1.1c Reserve 5% margin for metadata overhead
+- [x] 3.1.2 Implement rule selection by directory filter
+- [x] 3.1.3 Implement rule selection by glob matching
+- [x] 3.1.4 Implement rule selection by priority sorting
+- [x] 3.1.5 Implement rule selection by tag filter
+- [x] 3.1.6 Create compiler interface/abstract class
+- [x] 3.1.7 Write unit tests for token estimation accuracy
 
 ### 3.2 Cursor Compiler
-- [ ] 3.2.1 Implement .mdc file format generation
-- [ ] 3.2.2 Implement glob field mapping (source globs → .mdc globs)
-- [ ] 3.2.3 Implement directory-based glob inference when source has no globs
-- [ ] 3.2.4 Generate output path: `.cursor/rules/[domain]-[name].mdc`
-- [ ] 3.2.5 Write integration tests with sample rules
+- [x] 3.2.1 Implement .mdc file format generation
+- [x] 3.2.2 Implement glob field mapping (source globs → .mdc globs)
+- [x] 3.2.3 Implement directory-based glob inference when source has no globs
+- [x] 3.2.4 Generate output path: `.cursor/rules/[domain]-[name].mdc`
+- [x] 3.2.5 Write integration tests with sample rules
 
 ### 3.3 Claude Compiler
-- [ ] 3.3.1 Implement token-budgeted aggregation
-- [ ] 3.3.2 Include `project.md` content as header
-- [ ] 3.3.3 Include `architecture.md` summary
-- [ ] 3.3.4 Select rules by configured strategy (priority default)
-- [ ] 3.3.5 Generate `.context/` directory index for agent navigation
-- [ ] 3.3.6 Inject Context Hygiene meta-rule
-- [ ] 3.3.7 Write integration tests with token budget verification
+- [x] 3.3.1 Implement token-budgeted aggregation
+- [x] 3.3.2 Include `project.md` content as header
+- [x] 3.3.3 Include `architecture.md` summary
+- [x] 3.3.4 Select rules by configured strategy (priority default)
+- [x] 3.3.5 Generate `.context/` directory index for agent navigation
+- [x] 3.3.6 Inject Context Hygiene meta-rule
+- [x] 3.3.7 Write integration tests with token budget verification
 
 ### 3.4 Agents Compiler
-- [ ] 3.4.1 Implement comprehensive document generation
-- [ ] 3.4.2 Include full `project.md` content
-- [ ] 3.4.3 Include full `architecture.md` content
-- [ ] 3.4.4 Include rule directory index with summaries
-- [ ] 3.4.5 Inject Context Hygiene meta-rule
-- [ ] 3.4.6 Write integration tests
+- [x] 3.4.1 Implement comprehensive document generation
+- [x] 3.4.2 Include full `project.md` content
+- [x] 3.4.3 Include full `architecture.md` content
+- [x] 3.4.4 Include rule directory index with summaries
+- [x] 3.4.5 Inject Context Hygiene meta-rule
+- [x] 3.4.6 Write integration tests
 
 ### 3.5 Phase 3 Validation
-- [ ] 3.5.1 Run compilation tests - verify all three compilers work
-- [ ] 3.5.2 Validate token estimation accuracy against tiktoken
-- [ ] 3.5.3 Generate `docs/validation/phase3-compilation.md` with:
-  - [ ] Test coverage report for compilation modules (target: ≥80%)
-  - [ ] Token estimation accuracy comparison table
-  - [ ] Sample .mdc output file
-  - [ ] Sample CLAUDE.md output (with token count)
-  - [ ] Sample AGENTS.md output (with token count)
-  - [ ] Rule selection examples (by priority, directory, glob, tag)
-  - [ ] Token budget enforcement proof (show truncation at limit)
+- [x] 3.5.1 Run compilation tests - verify all three compilers work
+- [x] 3.5.2 Validate token estimation accuracy against tiktoken
+- [x] 3.5.3 Generate `docs/validation/phase3-compilation.md` with:
+  - [x] Test coverage report for compilation modules (target: ≥80%)
+  - [x] Token estimation accuracy comparison table
+  - [x] Sample .mdc output file
+  - [x] Sample CLAUDE.md output (with token count)
+  - [x] Sample AGENTS.md output (with token count)
+  - [x] Rule selection examples (by priority, directory, glob, tag)
+  - [x] Token budget enforcement proof (show truncation at limit)
 
 ---
 
-## Phase 4: Build System
+## Phase 4: Build System ✅
 
 ### 4.1 Incremental Build (incremental-build)
-- [ ] 4.1.1 Define build manifest schema (JSON)
-- [ ] 4.1.2 Implement mtime-based fast change detection
-- [ ] 4.1.3 Implement SHA-256 content hash calculation (with "sha256:" prefix)
-- [ ] 4.1.4 Implement output dependency tracking (rule → compiled files)
-- [ ] 4.1.5 Implement selective recompilation based on changed files
-- [ ] 4.1.6 Add manifest read/write to `.context/.build-manifest.json`
-- [ ] 4.1.7 Write unit tests for change detection
-- [ ] 4.1.8 Write integration tests for incremental rebuild
+- [x] 4.1.1 Define build manifest schema (JSON)
+- [x] 4.1.2 Implement mtime-based fast change detection
+- [x] 4.1.3 Implement SHA-256 content hash calculation (with "sha256:" prefix)
+- [x] 4.1.4 Implement output dependency tracking (rule → compiled files)
+- [x] 4.1.5 Implement selective recompilation based on changed files
+- [x] 4.1.6 Add manifest read/write to `.context/.build-manifest.json`
+- [x] 4.1.7 Write unit tests for change detection
+- [x] 4.1.8 Write integration tests for incremental rebuild
 
 ### 4.2 Atomic Writes and Build Locking
-- [ ] 4.2.1 Implement atomic file writes:
-  - [ ] 4.2.1a Write to temp file (e.g., `CLAUDE.md.tmp.{pid}`)
-  - [ ] 4.2.1b Atomic rename to target path
-  - [ ] 4.2.1c Cleanup temp files on error
-- [ ] 4.2.2 Implement multi-file transaction (all-or-nothing)
-- [ ] 4.2.3 Implement build locking:
-  - [ ] 4.2.3a Create `.context/.build.lock` with pid, timestamp, hostname
-  - [ ] 4.2.3b Block new builds if active lock exists
-  - [ ] 4.2.3c Remove stale locks (>5 minutes old)
-  - [ ] 4.2.3d Release lock on build completion
-- [ ] 4.2.4 Write unit tests for atomic operations
-- [ ] 4.2.5 Write unit tests for lock handling
+- [x] 4.2.1 Implement atomic file writes:
+  - [x] 4.2.1a Write to temp file (e.g., `CLAUDE.md.tmp.{pid}`)
+  - [x] 4.2.1b Atomic rename to target path
+  - [x] 4.2.1c Cleanup temp files on error
+- [x] 4.2.2 Implement multi-file transaction (all-or-nothing)
+- [x] 4.2.3 Implement build locking:
+  - [x] 4.2.3a Create `.context/.build.lock` with pid, timestamp, hostname
+  - [x] 4.2.3b Block new builds if active lock exists
+  - [x] 4.2.3c Remove stale locks (>5 minutes old)
+  - [x] 4.2.3d Release lock on build completion
+- [x] 4.2.4 Write unit tests for atomic operations
+- [x] 4.2.5 Write unit tests for lock handling
 
 ### 4.3 Build Orchestration
-- [ ] 4.3.1 Implement full build pipeline: scan → validate → compile
-- [ ] 4.3.2 Implement incremental build pipeline
-- [ ] 4.3.3 Handle compilation errors gracefully with clear messages
-- [ ] 4.3.4 Handle disk full and permission errors with specific messages
-- [ ] 4.3.5 Implement parallel rule processing for performance
-- [ ] 4.3.6 Add build timing and statistics output
+- [x] 4.3.1 Implement full build pipeline: scan → validate → compile
+- [x] 4.3.2 Implement incremental build pipeline
+- [x] 4.3.3 Handle compilation errors gracefully with clear messages
+- [x] 4.3.4 Handle disk full and permission errors with specific messages
+- [x] 4.3.5 Implement parallel rule processing for performance
+- [x] 4.3.6 Add build timing and statistics output
 
 ### 4.4 Phase 4 Validation
-- [ ] 4.4.1 Run build system tests - verify incremental builds work
-- [ ] 4.4.2 Test concurrent build blocking
-- [ ] 4.4.3 Test crash recovery (stale lock removal)
-- [ ] 4.4.4 Generate `docs/validation/phase4-build-system.md` with:
-  - [ ] Test coverage report for build modules (target: ≥80%)
-  - [ ] Sample build manifest JSON
-  - [ ] Incremental build timing comparison (full vs incremental)
-  - [ ] Atomic write test results (interrupt simulation)
-  - [ ] Lock file format example
-  - [ ] Concurrent build blocking proof
-  - [ ] Stale lock recovery proof
-  - [ ] Error message examples (disk full, permission denied)
+- [x] 4.4.1 Run build system tests - verify incremental builds work
+- [x] 4.4.2 Test concurrent build blocking
+- [x] 4.4.3 Test crash recovery (stale lock removal)
+- [x] 4.4.4 Generate `docs/validation/phase4-build-system.md` with:
+  - [x] Test coverage report for build modules (target: ≥80%)
+  - [x] Sample build manifest JSON
+  - [x] Incremental build timing comparison (full vs incremental)
+  - [x] Atomic write test results (interrupt simulation)
+  - [x] Lock file format example
+  - [x] Concurrent build blocking proof
+  - [x] Stale lock recovery proof
+  - [x] Error message examples (disk full, permission denied)
 
 ---
 
-## Phase 5: CLI Interface (Unified `ctx` Binary)
+## Phase 5: CLI Interface (Unified `ctx` Binary) ✅
 
 ### 5.1 Initialization Command (cli-interface)
-- [ ] 5.1.1 Implement `ctx init` command with interactive prompts
-- [ ] 5.1.2 Prompt for agent selection (Cursor, Claude, All)
-- [ ] 5.1.3 Create `.context/` directory structure
-- [ ] 5.1.4 Generate template files based on selection
-- [ ] 5.1.5 Detect and warn about existing `.context/` directory
-- [ ] 5.1.6 Add `--force` flag to overwrite existing
-- [ ] 5.1.7 Add `--no-interactive` flag for CI/automation
-- [ ] 5.1.8 Write E2E tests for initialization flow
+- [x] 5.1.1 Implement `ctx init` command with interactive prompts
+- [x] 5.1.2 Prompt for agent selection (Cursor, Claude, All)
+- [x] 5.1.3 Create `.context/` directory structure
+- [x] 5.1.4 Generate template files based on selection
+- [x] 5.1.5 Detect and warn about existing `.context/` directory
+- [x] 5.1.6 Add `--force` flag to overwrite existing
+- [x] 5.1.7 Add `--no-interactive` flag for CI/automation
+- [x] 5.1.8 Write E2E tests for initialization flow
 
 ### 5.2 Migration Wizard
-- [ ] 5.2.1 Implement `ctx init --wizard` for guided migration
-- [ ] 5.2.2 Detect existing context files (.cursorrules, CLAUDE.md, AGENTS.md)
-- [ ] 5.2.3 Analyze content structure and size
-- [ ] 5.2.4 Recommend migration strategy (direct vs attach mode)
-- [ ] 5.2.5 Preview planned changes
-- [ ] 5.2.6 Implement `--dry-run` mode
-- [ ] 5.2.7 Handle Ctrl+C gracefully (no changes made)
-- [ ] 5.2.8 Write tests for wizard flow
+- [x] 5.2.1 Implement `ctx init --wizard` for guided migration
+- [x] 5.2.2 Detect existing context files (.cursorrules, CLAUDE.md, AGENTS.md)
+- [x] 5.2.3 Analyze content structure and size
+- [x] 5.2.4 Recommend migration strategy (direct vs attach mode)
+- [x] 5.2.5 Preview planned changes
+- [x] 5.2.6 Implement `--dry-run` mode
+- [x] 5.2.7 Handle Ctrl+C gracefully (no changes made)
+- [x] 5.2.8 Write tests for wizard flow
 
 ### 5.3 Build Command
-- [ ] 5.3.1 Implement `ctx build` command
-- [ ] 5.3.2 Implement `ctx build --incremental` flag
-- [ ] 5.3.3 Implement `--verbose` and `--quiet` output modes
-- [ ] 5.3.4 Run static analysis before compilation
-- [ ] 5.3.5 Display validation errors and warnings
-- [ ] 5.3.6 Output compilation summary (files generated, tokens used, duration)
-- [ ] 5.3.7 Return appropriate exit codes (0=success, 1=validation error, 2=runtime error)
-- [ ] 5.3.8 Write E2E tests for build command
+- [x] 5.3.1 Implement `ctx build` command
+- [x] 5.3.2 Implement `ctx build --incremental` flag
+- [x] 5.3.3 Implement `--verbose` and `--quiet` output modes
+- [x] 5.3.4 Run static analysis before compilation
+- [x] 5.3.5 Display validation errors and warnings
+- [x] 5.3.6 Output compilation summary (files generated, tokens used, duration)
+- [x] 5.3.7 Return appropriate exit codes (0=success, 1=validation error, 2=runtime error)
+- [x] 5.3.8 Write E2E tests for build command
 
 ### 5.4 Lint Command
-- [ ] 5.4.1 Implement `ctx lint` command for standalone validation
-- [ ] 5.4.2 Output machine-readable format option (--json)
-- [ ] 5.4.3 Support file path arguments for targeted linting
+- [x] 5.4.1 Implement `ctx lint` command for standalone validation
+- [x] 5.4.2 Output machine-readable format option (--json)
+- [x] 5.4.3 Support file path arguments for targeted linting
 
 ### 5.5 Other CLI Commands
-- [ ] 5.5.1 Implement `ctx diff --legacy` for migration comparison
-- [ ] 5.5.2 Implement `ctx verify` for checksum verification
-- [ ] 5.5.3 Implement `ctx migrate` subcommand for migration operations
-- [ ] 5.5.4 Implement `ctx --help` and `ctx --version`
-- [ ] 5.5.5 Implement command-specific help (e.g., `ctx build --help`)
-- [ ] 5.5.6 Handle unknown commands with suggestions
+- [x] 5.5.1 Implement `ctx diff --legacy` for migration comparison
+- [x] 5.5.2 Implement `ctx verify` for checksum verification
+- [x] 5.5.3 Implement `ctx migrate` subcommand for migration operations
+- [x] 5.5.4 Implement `ctx --help` and `ctx --version`
+- [x] 5.5.5 Implement command-specific help (e.g., `ctx build --help`)
+- [x] 5.5.6 Handle unknown commands with suggestions
 
 ### 5.6 Windows Compatibility
-- [ ] 5.6.1 Handle both `/` and `\` path separators
-- [ ] 5.6.2 Configure platform-appropriate line endings
-- [ ] 5.6.3 Ensure CLI executable without additional setup
-- [ ] 5.6.4 Write cross-platform tests
+- [x] 5.6.1 Handle both `/` and `\` path separators
+- [x] 5.6.2 Configure platform-appropriate line endings
+- [x] 5.6.3 Ensure CLI executable without additional setup
+- [x] 5.6.4 Write cross-platform tests
 
 ### 5.7 Phase 5 Validation
-- [ ] 5.7.1 Run CLI E2E tests on macOS, Linux, Windows
-- [ ] 5.7.2 Test all commands with `--help` flag
-- [ ] 5.7.3 Generate `docs/validation/phase5-cli.md` with:
-  - [ ] Test coverage report for CLI modules (target: ≥80%)
-  - [ ] Command help output for all commands
-  - [ ] `ctx init` terminal recording (asciinema or screenshots)
-  - [ ] `ctx build` output examples (success, error, warning)
-  - [ ] `ctx lint --json` output sample
-  - [ ] Exit code verification table
-  - [ ] Cross-platform test results (macOS, Linux, Windows)
-  - [ ] Migration wizard flow screenshots
+- [x] 5.7.1 Run CLI E2E tests on macOS, Linux, Windows
+- [x] 5.7.2 Test all commands with `--help` flag
+- [x] 5.7.3 Generate `docs/validation/phase5-cli.md` with:
+  - [x] Test coverage report for CLI modules (target: ≥80%)
+  - [x] Command help output for all commands
+  - [x] `ctx init` terminal recording (asciinema or screenshots)
+  - [x] `ctx build` output examples (success, error, warning)
+  - [x] `ctx lint --json` output sample
+  - [x] Exit code verification table
+  - [x] Cross-platform test results (macOS, Linux, Windows)
+  - [x] Migration wizard flow screenshots
 
 ---
 
-## Phase 6: Git Integration
+## Phase 6: Git Integration ✅
 
 ### 6.1 Hook Setup (git-integration)
-- [ ] 6.1.1 Implement Husky installation check
-- [ ] 6.1.2 Install Husky if not present (with user confirmation)
-- [ ] 6.1.3 Generate pre-commit hook script
-- [ ] 6.1.4 Hook calls `ctx build --incremental`
-- [ ] 6.1.5 Stage updated compilation products on success
-- [ ] 6.1.6 Block commit on blocking validation errors
-- [ ] 6.1.7 Add `.husky/pre-commit` to generated files
-- [ ] 6.1.8 Write integration tests for hook behavior
+- [x] 6.1.1 Implement Husky installation check
+- [x] 6.1.2 Install Husky if not present (with user confirmation)
+- [x] 6.1.3 Generate pre-commit hook script
+- [x] 6.1.4 Hook calls `ctx build --incremental`
+- [x] 6.1.5 Stage updated compilation products on success
+- [x] 6.1.6 Block commit on blocking validation errors
+- [x] 6.1.7 Add `.husky/pre-commit` to generated files
+- [x] 6.1.8 Write integration tests for hook behavior
 
 ### 6.2 Gitignore Management
-- [ ] 6.2.1 Detect existing `.gitignore`
-- [ ] 6.2.2 Add `.context/.build-manifest.json` to ignore list
-- [ ] 6.2.3 Optionally add compilation products to ignore (user choice)
+- [x] 6.2.1 Detect existing `.gitignore`
+- [x] 6.2.2 Add `.context/.build-manifest.json` to ignore list
+- [x] 6.2.3 Optionally add compilation products to ignore (user choice)
 
 ### 6.3 Phase 6 Validation
-- [ ] 6.3.1 Test hook installation in fresh Git repo
-- [ ] 6.3.2 Test commit blocking on validation errors
-- [ ] 6.3.3 Test auto-staging of compiled outputs
-- [ ] 6.3.4 Generate `docs/validation/phase6-git.md` with:
-  - [ ] Test coverage report for git module (target: ≥80%)
-  - [ ] Pre-commit hook script content
-  - [ ] Hook execution log (successful commit)
-  - [ ] Hook execution log (blocked commit with errors)
-  - [ ] Auto-staging proof (git status before/after)
-  - [ ] .gitignore additions example
+- [x] 6.3.1 Test hook installation in fresh Git repo
+- [x] 6.3.2 Test commit blocking on validation errors
+- [x] 6.3.3 Test auto-staging of compiled outputs
+- [x] 6.3.4 Generate `docs/validation/phase6-git.md` with:
+  - [x] Test coverage report for git module (target: ≥80%)
+  - [x] Pre-commit hook script content
+  - [x] Hook execution log (successful commit)
+  - [x] Hook execution log (blocked commit with errors)
+  - [x] Auto-staging proof (git status before/after)
+  - [x] .gitignore additions example
 
 ---
 
-## Phase 7: Migration Support
+## Phase 7: Migration Support ✅
 
 ### 7.1 Analysis Mode (migration-support)
-- [ ] 7.1.1 Implement `ctx migrate --analyze` command
-- [ ] 7.1.2 Detect existing `.cursorrules`, `CLAUDE.md`, `AGENTS.md`
-- [ ] 7.1.3 Analyze file sizes and content structure
-- [ ] 7.1.4 Output migration recommendations
-- [ ] 7.1.5 Write tests for detection logic
+- [x] 7.1.1 Implement `ctx migrate --analyze` command
+- [x] 7.1.2 Detect existing `.cursorrules`, `CLAUDE.md`, `AGENTS.md`
+- [x] 7.1.3 Analyze file sizes and content structure
+- [x] 7.1.4 Output migration recommendations
+- [x] 7.1.5 Write tests for detection logic
 
 ### 7.2 Attach Mode
-- [ ] 7.2.1 Implement `ctx migrate --attach` command
-- [ ] 7.2.2 Create `.context/` alongside existing files
-- [ ] 7.2.3 Import existing rules as `.context/rules/legacy.md`
-- [ ] 7.2.4 Configure attach mode in `config.yaml`
-- [ ] 7.2.5 Compilation appends to existing files instead of overwriting
+- [x] 7.2.1 Implement `ctx migrate --attach` command
+- [x] 7.2.2 Create `.context/` alongside existing files
+- [x] 7.2.3 Import existing rules as `.context/rules/legacy.md`
+- [x] 7.2.4 Configure attach mode in `config.yaml`
+- [x] 7.2.5 Compilation appends to existing files instead of overwriting
 
 ### 7.3 Completion Mode
-- [ ] 7.3.1 Implement `ctx migrate --complete` command
-- [ ] 7.3.2 Implement `ctx diff --legacy` for comparison
-- [ ] 7.3.3 Remove legacy files after confirmation
-- [ ] 7.3.4 Update `config.yaml` to remove attach mode
+- [x] 7.3.1 Implement `ctx migrate --complete` command
+- [x] 7.3.2 Implement `ctx diff --legacy` for comparison
+- [x] 7.3.3 Remove legacy files after confirmation
+- [x] 7.3.4 Update `config.yaml` to remove attach mode
 
 ### 7.4 Phase 7 Validation
-- [ ] 7.4.1 Test full migration workflow (analyze → attach → complete)
-- [ ] 7.4.2 Test with various legacy file combinations
-- [ ] 7.4.3 Generate `docs/validation/phase7-migration.md` with:
-  - [ ] Test coverage report for migration module (target: ≥80%)
-  - [ ] `ctx migrate --analyze` output example
-  - [ ] Attach mode config.yaml example
-  - [ ] Section markers in appended content
-  - [ ] `ctx diff --legacy` output example
-  - [ ] Before/after file comparison for full migration
-  - [ ] Backup directory contents after completion
+- [x] 7.4.1 Test full migration workflow (analyze → attach → complete)
+- [x] 7.4.2 Test with various legacy file combinations
+- [x] 7.4.3 Generate `docs/validation/phase7-migration.md` with:
+  - [x] Test coverage report for migration module (target: ≥80%)
+  - [x] `ctx migrate --analyze` output example
+  - [x] Attach mode config.yaml example
+  - [x] Section markers in appended content
+  - [x] `ctx diff --legacy` output example
+  - [x] Before/after file comparison for full migration
+  - [x] Backup directory contents after completion
 
 ---
 

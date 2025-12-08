@@ -26,4 +26,13 @@ module.exports = {
       tsconfig: 'tsconfig.json',
     }],
   },
+  // Transform ESM modules like chalk
+  transformIgnorePatterns: [
+    'node_modules/(?!(chalk|#ansi-styles|#supports-color)/)',
+  ],
+  // Mock ESM modules that have issues with Jest
+  moduleNameMapper: {
+    '^chalk$': '<rootDir>/tests/__mocks__/chalk.ts',
+    '^inquirer$': '<rootDir>/tests/__mocks__/inquirer.ts',
+  },
 };

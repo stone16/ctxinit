@@ -163,6 +163,9 @@ export class CursorCompiler extends BaseCompiler {
       '---',
     ].join('\n');
 
-    return `${yamlFrontmatter}\n\n${content}\n`;
+    const bodyContent = `${yamlFrontmatter}\n\n${content}\n`;
+
+    // Add checksum and timestamp metadata
+    return this.addMetadata(bodyContent);
   }
 }

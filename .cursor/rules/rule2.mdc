@@ -1,0 +1,14 @@
+---
+description: "Second test rule"
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# Rule 2
+
+This is the second test rule.
+
+<!-- ctx build metadata -->
+<!-- timestamp: 2025-12-08T00:44:18.415Z -->
+<!-- checksum: sha256:67c126bea75de1f332a01d8725b7aa7ada932e9edf0059f01e98d9043be77b78 -->

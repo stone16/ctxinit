@@ -1,0 +1,14 @@
+---
+description: "First test rule"
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# Rule 1
+
+This is the first test rule.
+
+<!-- ctx build metadata -->
+<!-- timestamp: 2025-12-08T00:44:18.415Z -->
+<!-- checksum: sha256:087d39110218518a800b2952d841a38abe92ab1d283744b8822753d47a512ed5 -->

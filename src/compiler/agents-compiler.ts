@@ -101,12 +101,15 @@ export class AgentsCompiler extends BaseCompiler {
     }
 
     // Build output content
-    const content = this.buildOutput(
+    let content = this.buildOutput(
       projectContent,
       architectureContent,
       selectedRules,
       metaRule
     );
+
+    // Add checksum and timestamp metadata
+    content = this.addMetadata(content);
 
     const totalTokens = estimateTokens(content).tokens;
 

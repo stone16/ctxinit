@@ -1,0 +1,16 @@
+version: '1.0'
+project:
+  name: basic-project
+  description: A basic example project demonstrating ctxinit usage
+
+compile:
+  claude:
+    max_tokens: 4000
+    strategy: priority
+    always_include: []
+
+  cursor:
+    strategy: all
+
+  agents:
+    max_tokens: 8000
