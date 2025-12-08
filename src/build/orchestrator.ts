@@ -173,7 +173,7 @@ export class BuildOrchestrator {
         }
 
         // Step 3: Check for incremental build
-        let manifest = options.force ? null : await readManifest(this.projectRoot);
+        const manifest = options.force ? null : await readManifest(this.projectRoot);
         let changedRules = rules;
 
         if (manifest && !options.force) {
@@ -221,20 +221,23 @@ export class BuildOrchestrator {
           let compilationResult: CompilationResult;
 
           switch (target) {
-            case 'cursor':
+            case 'cursor': {
               const cursorCompiler = new CursorCompiler(compilerContext);
               compilationResult = await cursorCompiler.compile();
               break;
+            }
 
-            case 'claude':
+            case 'claude': {
               const claudeCompiler = new ClaudeCompiler(compilerContext);
               compilationResult = await claudeCompiler.compile();
               break;
+            }
 
-            case 'agents':
+            case 'agents': {
               const agentsCompiler = new AgentsCompiler(compilerContext);
               compilationResult = await agentsCompiler.compile();
               break;
+            }
 
             default:
               result.errors.push(`Unknown target: ${target}`);

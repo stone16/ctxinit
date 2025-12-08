@@ -294,9 +294,34 @@ npm install
 
 # Build the project
 npm run build
+```
 
-# Link for local development
-npm link
+### Local Testing with npm pack
+
+To test your changes as an end user would experience them, use `npm pack` to create a tarball and install it in a separate directory:
+
+```bash
+# 1. Build and pack the project
+npm run build
+npm pack
+# Creates ctxinit-x.x.x.tgz
+
+# 2. In a separate test directory, install from the tarball
+mkdir ~/test-project && cd ~/test-project
+npm install /path/to/ctxinit/ctxinit-x.x.x.tgz
+
+# 3. Test the CLI commands
+npx ctx init
+npx ctx build
+npx ctx verify
+```
+
+For global installation testing:
+
+```bash
+npm install -g /path/to/ctxinit/ctxinit-x.x.x.tgz
+ctx init
+ctx build
 ```
 
 ### Running Tests
@@ -370,22 +395,6 @@ ctxinit/
 ├── templates/            # Template files for ctx init
 ├── docs/                 # Documentation
 └── examples/             # Example projects
-```
-
-### Running the CLI Locally
-
-After building, you can run the CLI directly:
-
-```bash
-# Using npm link (recommended for development)
-npm link
-ctx --help
-
-# Or run directly
-node bin/ctx.js --help
-
-# Or use npx from the project root
-npx . --help
 ```
 
 ### Writing Tests
