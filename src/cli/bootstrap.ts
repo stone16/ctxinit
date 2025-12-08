@@ -31,7 +31,11 @@ function getTemplatesDir(): string {
 function readTemplate(templateName: string): string {
   const templatesDir = getTemplatesDir();
   const templatePath = path.join(templatesDir, templateName);
-  return fs.readFileSync(templatePath, 'utf-8');
+  try {
+    return fs.readFileSync(templatePath, 'utf-8');
+  } catch (error) {
+    throw new Error(`Failed to read template "${templateName}" at ${templatePath}: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 /**
@@ -224,7 +228,8 @@ async function detectPackageInfo(projectRoot: string): Promise<PackageInfo | nul
         scripts: pkg.scripts || {},
       };
     } catch {
-      // Ignore parse errors
+      // Ignore parse errors - package.json is invalid or unreadable
+      // Fall through to try other package managers
     }
   }
 

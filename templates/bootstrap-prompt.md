@@ -74,7 +74,7 @@ The following documentation already exists:
 
 {{#docs}}
 ### {{path}}
-```
+```text
 {{excerpt}}
 ```
 {{/docs}}
@@ -122,7 +122,7 @@ Must include authoritative commands for:
 - Deployment (if applicable)
 
 Format as imperative instructions:
-```
+```text
 # Build
 Run: `npm run build`
 
@@ -142,7 +142,7 @@ Based on the sample files, document:
 
 #### 5. Do-Not Rules (`boundaries.md`)
 Critical prohibitions. Format as imperative negatives:
-```
+```text
 - Do NOT modify files in `dist/` or `build/` directly
 - Do NOT commit `.env` files
 - Do NOT add dependencies without approval
