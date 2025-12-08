@@ -1,0 +1,25 @@
+# ctxinit Configuration
+# Documentation: https://github.com/your-org/ctxinit
+
+version: "1.0"
+
+compile:
+  # Claude Code target configuration
+  claude:
+    max_tokens: 4000
+    strategy: priority  # priority | directory | glob | tag | all
+    always_include: []
+
+  # Cursor target configuration
+  cursor:
+    strategy: all
+
+  # AGENTS.md target configuration
+  agents:
+    max_tokens: 8000
+    strategy: priority
+    include_dirs: []
+
+# Conflict resolution when rules overlap
+conflict_resolution:
+  strategy: priority_wins  # priority_wins | merge
