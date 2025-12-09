@@ -13,6 +13,8 @@ import { runVerify } from './cli/verify';
 import { runDiff } from './cli/diff';
 import { runMigrate } from './cli/migrate';
 import { runHooks } from './cli/hooks';
+import { runEnhancedBootstrap } from './bootstrap';
+import { listProviderTypes, LLMProviderType } from './llm';
 
 const program = new Command();
 
@@ -29,6 +31,7 @@ program
   .option('--no-interactive', 'Run without prompts (use defaults)')
   .option('--wizard', 'Launch guided migration wizard')
   .option('--dry-run', 'Show what would happen without making changes')
+  .option('-b, --bootstrap', 'Analyze codebase and generate LLM prompt for rule creation')
   .action(async (options) => {
     try {
       const exitCode = await runInit({
@@ -36,6 +39,7 @@ program
         interactive: options.interactive,
         wizard: options.wizard,
         dryRun: options.dryRun,
+        bootstrap: options.bootstrap,
       });
       process.exit(exitCode);
     } catch (error) {
@@ -181,6 +185,46 @@ program
         verbose: options.verbose,
       });
       process.exit(exitCode);
+    } catch (error) {
+      console.error('Error:', (error as Error).message);
+      process.exit(2);
+    }
+  });
+
+// Bootstrap command (enhanced LLM-powered context generation)
+program
+  .command('bootstrap')
+  .description('Generate context files using LLM analysis')
+  .option('-p, --provider <type>', 'LLM provider to use (auto-detect if not specified)')
+  .option('--analyze-only', 'Only analyze codebase, skip LLM invocation')
+  .option('--skip-validation', 'Skip output validation')
+  .option('--auto-build', 'Automatically run build after bootstrap')
+  .option('-v, --verbose', 'Show detailed output including prompts')
+  .option('--dry-run', 'Show what would be generated without writing files')
+  .option('--list-providers', 'List available LLM providers')
+  .action(async (options) => {
+    try {
+      // List providers if requested
+      if (options.listProviders) {
+        console.log('\nAvailable LLM providers:\n');
+        for (const provider of listProviderTypes()) {
+          console.log(`  ${provider.type.padEnd(15)} ${provider.description}`);
+        }
+        console.log('\nUse --provider <type> to specify a provider.');
+        console.log('If not specified, the best available provider will be auto-selected.\n');
+        process.exit(0);
+      }
+
+      const result = await runEnhancedBootstrap(process.cwd(), {
+        provider: options.provider as LLMProviderType | undefined,
+        analyzeOnly: options.analyzeOnly,
+        skipValidation: options.skipValidation,
+        autoBuild: options.autoBuild,
+        verbose: options.verbose,
+        dryRun: options.dryRun,
+      });
+
+      process.exit(result.success ? 0 : 1);
     } catch (error) {
       console.error('Error:', (error as Error).message);
       process.exit(2);
