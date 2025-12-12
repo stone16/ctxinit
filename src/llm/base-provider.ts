@@ -23,6 +23,20 @@ export abstract class BaseLLMProvider implements LLMProvider {
     this.config = config;
   }
 
+  /**
+   * Log verbose debug information if verbose mode is enabled
+   */
+  protected log(message: string, data?: unknown): void {
+    if (this.config.verbose) {
+      const prefix = `[${this.type}]`;
+      if (data !== undefined) {
+        console.error(`${prefix} ${message}:`, data);
+      } else {
+        console.error(`${prefix} ${message}`);
+      }
+    }
+  }
+
   abstract get type(): LLMProviderType;
   abstract get name(): string;
   abstract get capabilities(): LLMProviderCapabilities;

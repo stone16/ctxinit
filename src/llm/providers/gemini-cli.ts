@@ -64,15 +64,17 @@ export class GeminiCLIProvider extends BaseLLMProvider {
       : prompt;
 
     return new Promise((resolve, reject) => {
-      const args = [
-        'prompt',
-        finalPrompt,
-      ];
+      const args: string[] = [];
 
-      // Add model if specified
+      // Add model if specified (must come before -p flag)
       if (this.config.model) {
-        args.unshift('--model', this.config.model);
+        args.push('-m', this.config.model);
       }
+
+      // Add prompt using -p flag (correct Gemini CLI syntax)
+      args.push('-p', finalPrompt);
+
+      this.log('Executing command', { command: this.cliCommand, args: args.slice(0, -1), promptLength: finalPrompt.length });
 
       const child = spawn(this.cliCommand, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -95,11 +97,21 @@ export class GeminiCLIProvider extends BaseLLMProvider {
       });
 
       child.on('close', (code) => {
+        this.log('Process exited', { code, stdoutLength: stdout.length, stderrLength: stderr.length });
+
         if (code !== 0) {
-          reject(new Error(`Gemini CLI exited with code ${code}: ${stderr}`));
+          const errorDetails = stderr.trim() || 'No error output captured';
+          this.log('Command failed', { errorDetails });
+          const suggestion = stderr.includes('command not found') || stderr.includes('not recognized')
+            ? '\nMake sure gemini CLI is installed. See: https://github.com/google-gemini/gemini-cli'
+            : stderr.includes('auth') || stderr.includes('API key')
+            ? '\nAuthentication issue - check your GOOGLE_API_KEY environment variable'
+            : '\nTry running with --verbose for more details.';
+          reject(new Error(`Gemini CLI failed (exit code ${code}):\n${errorDetails}${suggestion}`));
           return;
         }
 
+        this.log('Command succeeded', { responseLength: stdout.trim().length });
         resolve({
           content: stdout.trim(),
           metadata: {

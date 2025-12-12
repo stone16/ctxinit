@@ -37,6 +37,8 @@ export interface LLMProviderConfig {
   temperature?: number;
   /** Timeout in milliseconds */
   timeout?: number;
+  /** Enable verbose logging for debugging */
+  verbose?: boolean;
 }
 
 /**

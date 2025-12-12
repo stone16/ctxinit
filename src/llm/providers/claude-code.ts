@@ -84,6 +84,8 @@ export class ClaudeCodeProvider extends BaseLLMProvider {
       // Add the prompt
       args.push(finalPrompt);
 
+      this.log('Executing command', { command: this.cliCommand, args: args.slice(0, -1), promptLength: finalPrompt.length });
+
       const child = spawn(this.cliCommand, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
         timeout: this.getTimeout(),
@@ -101,15 +103,27 @@ export class ClaudeCodeProvider extends BaseLLMProvider {
       });
 
       child.on('error', (error) => {
-        reject(new Error(`Claude Code CLI error: ${error.message}`));
+        reject(new Error(`Claude Code CLI error: ${error.message}\n` +
+          `Make sure 'claude' is installed and in your PATH.\n` +
+          `Install: npm install -g @anthropic-ai/claude-code`));
       });
 
       child.on('close', (code) => {
+        this.log('Process exited', { code, stdoutLength: stdout.length, stderrLength: stderr.length });
+
         if (code !== 0) {
-          reject(new Error(`Claude Code CLI exited with code ${code}: ${stderr}`));
+          const errorDetails = stderr.trim() || 'No error output captured';
+          this.log('Command failed', { errorDetails });
+          const suggestion = stderr.includes('command not found') || stderr.includes('not recognized')
+            ? '\nMake sure claude CLI is installed: npm install -g @anthropic-ai/claude-code'
+            : stderr.includes('auth') || stderr.includes('token')
+            ? '\nAuthentication issue - try running: claude auth'
+            : '\nTry running with --verbose for more details.';
+          reject(new Error(`Claude Code CLI failed (exit code ${code}):\n${errorDetails}${suggestion}`));
           return;
         }
 
+        this.log('Command succeeded', { responseLength: stdout.trim().length });
         resolve({
           content: stdout.trim(),
           metadata: {
