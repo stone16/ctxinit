@@ -92,8 +92,11 @@ export class CodexCLIProvider extends BaseLLMProvider {
       let args: string[];
 
       if (this.cliCommand.startsWith('gh copilot')) {
-        // GitHub Copilot CLI
-        args = ['copilot', 'suggest', '-t', 'shell', finalPrompt];
+        // GitHub Copilot CLI - use 'gh' target type for general prompts
+        // Note: -t shell is for shell commands, -t gh for general GitHub CLI,
+        // -t git for git commands. For JSON generation, avoid shell type.
+        const targetType = request.jsonMode ? 'gh' : 'shell';
+        args = ['copilot', 'suggest', '-t', targetType, finalPrompt];
       } else {
         // Generic codex CLI
         args = ['--prompt', finalPrompt];
@@ -122,7 +125,14 @@ export class CodexCLIProvider extends BaseLLMProvider {
         reject(new Error(`Codex CLI error: ${error.message}`));
       });
 
+      // Set timeout
+      const timeoutId = setTimeout(() => {
+        child.kill('SIGTERM');
+        reject(new Error('Codex CLI timed out'));
+      }, this.getTimeout());
+
       child.on('close', (code) => {
+        clearTimeout(timeoutId);
         if (code !== 0) {
           reject(new Error(`Codex CLI exited with code ${code}: ${stderr}`));
           return;
@@ -136,14 +146,6 @@ export class CodexCLIProvider extends BaseLLMProvider {
           },
         });
       });
-
-      // Set timeout
-      const timeoutId = setTimeout(() => {
-        child.kill('SIGTERM');
-        reject(new Error('Codex CLI timed out'));
-      }, this.getTimeout());
-
-      child.on('close', () => clearTimeout(timeoutId));
     });
   }
 }

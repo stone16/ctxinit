@@ -48,7 +48,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
    * Get effective max tokens from config or default
    */
   protected getMaxTokens(request: LLMRequest): number {
-    return request.maxTokens || this.config.maxTokens || 4096;
+    return request.maxTokens ?? this.config.maxTokens ?? 4096;
   }
 
   /**
@@ -62,7 +62,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
    * Get timeout in milliseconds
    */
   protected getTimeout(): number {
-    return this.config.timeout || 120000; // 2 minutes default
+    return this.config.timeout ?? 120000; // 2 minutes default
   }
 
   /**

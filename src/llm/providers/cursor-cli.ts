@@ -1,9 +1,11 @@
 /**
  * Cursor CLI Provider
  *
- * Uses the Cursor IDE's CLI for LLM invocation.
- * Note: Cursor primarily operates through its IDE, but can be invoked
- * via the `cursor` command in certain contexts.
+ * Experimental provider for Cursor IDE CLI integration.
+ * Note: Cursor primarily operates through its IDE. This provider attempts
+ * to use cursor-agent if available, falling back to piping prompts to stdin.
+ *
+ * This is an experimental implementation - Cursor's CLI API may change.
  */
 
 import { spawn, execSync } from 'child_process';
@@ -67,12 +69,10 @@ export class CursorCLIProvider extends BaseLLMProvider {
       : prompt;
 
     return new Promise((resolve, reject) => {
-      // Cursor CLI invocation - this is a simplified implementation
-      // The actual Cursor CLI API may vary
-      const args = [
-        'ai',  // AI subcommand (hypothetical)
-        '--prompt', finalPrompt,
-      ];
+      // Note: Cursor's CLI interface is not publicly documented.
+      // This implementation uses stdin piping as a fallback approach.
+      // The cursor-agent command may be available in some installations.
+      const args: string[] = [];
 
       const child = spawn(this.cliCommand, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -81,6 +81,12 @@ export class CursorCLIProvider extends BaseLLMProvider {
 
       let stdout = '';
       let stderr = '';
+
+      // Write prompt to stdin for cursor to process
+      if (child.stdin) {
+        child.stdin.write(finalPrompt);
+        child.stdin.end();
+      }
 
       child.stdout?.on('data', (data: Buffer) => {
         stdout += data.toString();
@@ -94,7 +100,14 @@ export class CursorCLIProvider extends BaseLLMProvider {
         reject(new Error(`Cursor CLI error: ${error.message}`));
       });
 
+      // Set timeout
+      const timeoutId = setTimeout(() => {
+        child.kill('SIGTERM');
+        reject(new Error('Cursor CLI timed out'));
+      }, this.getTimeout());
+
       child.on('close', (code) => {
+        clearTimeout(timeoutId);
         if (code !== 0) {
           reject(new Error(`Cursor CLI exited with code ${code}: ${stderr}`));
           return;
@@ -108,14 +121,6 @@ export class CursorCLIProvider extends BaseLLMProvider {
           },
         });
       });
-
-      // Set timeout
-      const timeoutId = setTimeout(() => {
-        child.kill('SIGTERM');
-        reject(new Error('Cursor CLI timed out'));
-      }, this.getTimeout());
-
-      child.on('close', () => clearTimeout(timeoutId));
     });
   }
 }

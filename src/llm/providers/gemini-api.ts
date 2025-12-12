@@ -123,7 +123,9 @@ export class GeminiAPIProvider extends BaseLLMProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+        // Sanitize any API key that might appear in error messages
+        const sanitizedError = errorText.replace(/key=[^&\s]+/gi, 'key=[REDACTED]');
+        throw new Error(`Gemini API error (${response.status}): ${sanitizedError}`);
       }
 
       const data = await response.json() as {

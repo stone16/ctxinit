@@ -9,6 +9,7 @@
  */
 
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import fg from 'fast-glob';
 
@@ -361,7 +362,8 @@ function validateGlobPattern(
 
   // Validate by trying to compile the pattern
   try {
-    fg.sync(pattern, { cwd: '/tmp', onlyFiles: true });
+    // Use os.tmpdir() for cross-platform compatibility (Windows support)
+    fg.sync(pattern, { cwd: os.tmpdir(), onlyFiles: true });
     return { valid: true };
   } catch {
     return { valid: false, reason: 'Invalid glob syntax' };

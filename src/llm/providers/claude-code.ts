@@ -108,7 +108,14 @@ export class ClaudeCodeProvider extends BaseLLMProvider {
           `Install: npm install -g @anthropic-ai/claude-code`));
       });
 
+      // Set timeout
+      const timeoutId = setTimeout(() => {
+        child.kill('SIGTERM');
+        reject(new Error('Claude Code CLI timed out'));
+      }, this.getTimeout());
+
       child.on('close', (code) => {
+        clearTimeout(timeoutId);
         this.log('Process exited', { code, stdoutLength: stdout.length, stderrLength: stderr.length });
 
         if (code !== 0) {
@@ -132,14 +139,6 @@ export class ClaudeCodeProvider extends BaseLLMProvider {
           },
         });
       });
-
-      // Set timeout
-      const timeoutId = setTimeout(() => {
-        child.kill('SIGTERM');
-        reject(new Error('Claude Code CLI timed out'));
-      }, this.getTimeout());
-
-      child.on('close', () => clearTimeout(timeoutId));
     });
   }
 }
