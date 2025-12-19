@@ -19,6 +19,8 @@ import { BUILD_TARGETS, BuildTarget } from '../schemas/config';
 export interface BuildCommandOptions {
   /** Only rebuild changed files */
   incremental?: boolean;
+  /** Check whether outputs are up to date (no writes) */
+  check?: boolean;
   /** Show detailed output */
   verbose?: boolean;
   /** Suppress output except errors */
@@ -115,6 +117,7 @@ export async function runBuild(options: BuildCommandOptions): Promise<number> {
     projectRoot,
     targets: targets.length > 0 ? targets : undefined,
     force: options.force || !options.incremental,
+    check: options.check,
     skipValidation: options.skipValidation,
     verbose: options.verbose,
     quiet: options.quiet,
@@ -139,7 +142,11 @@ export async function runBuild(options: BuildCommandOptions): Promise<number> {
   if (!result.success) {
     // Check if it's a validation error (exit code 1) or runtime error (exit code 2)
     const hasValidationError = result.errors.some(
-      e => e.includes('Validation') || e.includes('duplicate') || e.includes('Parse error')
+      e =>
+        e.includes('Validation') ||
+        e.includes('duplicate') ||
+        e.includes('Parse error') ||
+        e.startsWith('[check]')
     );
     return hasValidationError ? 1 : 2;
   }

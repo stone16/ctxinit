@@ -33,6 +33,7 @@ import {
   printAnalysisSummary,
 } from '../cli/bootstrap';
 import { validateBootstrapOutput, ValidationResult } from './validator';
+import { executeBuild, formatBuildResult } from '../build/orchestrator';
 
 /**
  * Bootstrap options
@@ -249,6 +250,31 @@ export async function runEnhancedBootstrap(
     }
   }
 
+  // Phase 7: Optional build (generate compiled outputs)
+  if (options.autoBuild && !options.dryRun) {
+    console.log(chalk.cyan('\nPhase 7: Building compiled outputs...'));
+    try {
+      const buildResult = await executeBuild({
+        projectRoot,
+        force: true,
+        skipValidation: options.skipValidation,
+        quiet: true,
+      });
+
+      console.log('');
+      console.log(formatBuildResult(buildResult));
+
+      if (!buildResult.success) {
+        errors.push(...buildResult.errors.map((e) => `Auto-build: ${e}`));
+      }
+      if (buildResult.warnings.length > 0) {
+        warnings.push(...buildResult.warnings.map((w) => `Auto-build: ${w}`));
+      }
+    } catch (error) {
+      errors.push(`Auto-build failed: ${(error as Error).message}`);
+    }
+  }
+
   // Summary
   const success = errors.length === 0;
 
@@ -259,7 +285,7 @@ export async function runEnhancedBootstrap(
     console.log(chalk.blue('\n📝 Next steps:'));
     console.log(chalk.gray('   1. Review generated files in .context/'));
     console.log(chalk.gray('   2. Customize rules as needed'));
-    console.log(chalk.gray('   3. Run: ctx build'));
+    console.log(chalk.gray(`   3. Run: ctx build${options.autoBuild ? ' (optional - already ran)' : ''}`));
   } else {
     console.log(chalk.red.bold('❌ Bootstrap completed with errors'));
     console.log(chalk.gray(`\nErrors: ${errors.length}`));

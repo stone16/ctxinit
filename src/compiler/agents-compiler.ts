@@ -120,15 +120,17 @@ export class AgentsCompiler extends BaseCompiler {
       tokens: totalTokens,
     };
 
-    // Write output
-    try {
-      this.writeOutput(output.path, output.content);
-    } catch (error) {
-      errors.push({
-        type: 'write_error',
-        message: `Failed to write AGENTS.md: ${(error as Error).message}`,
-        path: 'AGENTS.md',
-      });
+    // Write output (optional - callers like the build orchestrator may write atomically)
+    if (this.context.writeToDisk !== false) {
+      try {
+        this.writeOutput(output.path, output.content);
+      } catch (error) {
+        errors.push({
+          type: 'write_error',
+          message: `Failed to write AGENTS.md: ${(error as Error).message}`,
+          path: 'AGENTS.md',
+        });
+      }
     }
 
     return {

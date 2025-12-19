@@ -30,7 +30,7 @@ A CLI tool for managing AI context files across multiple IDE targets. Compile yo
 - **Glob-Based Filtering**: Apply rules conditionally based on file patterns
 - **Incremental Builds**: Only rebuild when source files change
 - **Self-Healing Verification**: Detect tampering with SHA-256 checksums
-- **Watch Mode**: Automatically rebuild on file changes
+- **Watch Mode (planned)**: Automatically rebuild on file changes
 
 ## Installation
 
@@ -56,8 +56,8 @@ ctx build
 # Verify output integrity
 ctx verify
 
-# Watch for changes
-ctx build --watch
+# Check whether outputs are up to date (no writes)
+ctx build --check
 ```
 
 ## Project Structure
@@ -101,8 +101,9 @@ compile:
 
 - **all**: Include all rules (default for Cursor)
 - **priority**: Include rules by priority until token budget is reached
-- **tags**: Filter rules by tags
-- **domain**: Filter rules by domain
+- **directory**: Include rules from specific directories
+- **glob**: Include rules whose globs match current context files
+- **tag**: Filter rules by tags
 
 ## Writing Rules
 
@@ -143,14 +144,18 @@ Your rule content here...
 
 ### `ctx init`
 
-Initialize a new context project in the current directory.
+Initialize a new context project in the current directory. By default, this also runs the enhanced LLM bootstrap and then builds compiled outputs.
 
 ```bash
-ctx init [--force]
+ctx init [options]
 ```
 
 Options:
-- `--force`: Overwrite existing configuration
+- `--force`: Overwrite existing .context directory (creates backup)
+- `--no-bootstrap`: Skip LLM bootstrap (only create templates)
+- `--no-interactive`: Run without prompts (use defaults)
+- `--wizard`: Launch guided migration wizard
+- `--dry-run`: Show what would happen without making changes
 
 ### `ctx build`
 
@@ -161,16 +166,16 @@ ctx build [targets...] [options]
 ```
 
 Options:
-- `--watch, -w`: Watch for changes and rebuild
 - `--force`: Force full rebuild
 - `--skip-validation`: Skip rule validation
+- `--check`: Check whether outputs are up to date (no writes)
 - `--verbose, -v`: Verbose output
 
 Examples:
 ```bash
 ctx build                    # Build all targets
 ctx build claude cursor      # Build specific targets
-ctx build --watch            # Watch mode
+ctx build --check            # Check outputs match sources
 ```
 
 ### `ctx verify`

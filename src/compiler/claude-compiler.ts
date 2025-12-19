@@ -140,15 +140,17 @@ export class ClaudeCompiler extends BaseCompiler {
       tokens: totalTokens,
     };
 
-    // Write output
-    try {
-      this.writeOutput(output.path, output.content);
-    } catch (error) {
-      errors.push({
-        type: 'write_error',
-        message: `Failed to write CLAUDE.md: ${(error as Error).message}`,
-        path: 'CLAUDE.md',
-      });
+    // Write output (optional - callers like the build orchestrator may write atomically)
+    if (this.context.writeToDisk !== false) {
+      try {
+        this.writeOutput(output.path, output.content);
+      } catch (error) {
+        errors.push({
+          type: 'write_error',
+          message: `Failed to write CLAUDE.md: ${(error as Error).message}`,
+          path: 'CLAUDE.md',
+        });
+      }
     }
 
     return {

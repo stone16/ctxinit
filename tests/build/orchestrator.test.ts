@@ -73,6 +73,159 @@ This is the second test rule.
   });
 
   describe('BuildOrchestrator', () => {
+    it('should write outputs to projectRoot, not current working directory', async () => {
+      const config: Config = {
+        version: '1.0',
+        compile: {
+          claude: {
+            max_tokens: 4000,
+            strategy: 'priority',
+            always_include: [],
+          },
+        },
+        conflict_resolution: { strategy: 'priority_wins' },
+      };
+
+      const otherDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'orchestrator-othercwd-'));
+      const originalCwd = process.cwd();
+      process.chdir(otherDir);
+
+      try {
+        const orchestrator = new BuildOrchestrator(tempDir, config, { quiet: true });
+        const result = await orchestrator.build({
+          projectRoot: tempDir,
+          targets: ['claude'],
+          force: true,
+        });
+
+        expect(result.success).toBe(true);
+        expect(await fs.promises.access(path.join(tempDir, 'CLAUDE.md')).then(() => true).catch(() => false)).toBe(true);
+        expect(await fs.promises.access(path.join(otherDir, 'CLAUDE.md')).then(() => true).catch(() => false)).toBe(false);
+      } finally {
+        process.chdir(originalCwd);
+        await fs.promises.rm(otherDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should not rewrite outputs when only metadata would change', async () => {
+      const config: Config = {
+        version: '1.0',
+        compile: {
+          claude: {
+            max_tokens: 4000,
+            strategy: 'priority',
+            always_include: [],
+          },
+        },
+        conflict_resolution: { strategy: 'priority_wins' },
+      };
+
+      const orchestrator = new BuildOrchestrator(tempDir, config, { quiet: true });
+
+      // First build
+      let result = await orchestrator.build({
+        projectRoot: tempDir,
+        targets: ['claude'],
+        force: true,
+      });
+      expect(result.success).toBe(true);
+
+      const outputPath = path.join(tempDir, 'CLAUDE.md');
+      const firstContent = await fs.promises.readFile(outputPath, 'utf-8');
+
+      // Second build forces compilation, but should not rewrite the file if the "real" content is unchanged
+      result = await orchestrator.build({
+        projectRoot: tempDir,
+        targets: ['claude'],
+        force: true,
+      });
+      expect(result.success).toBe(true);
+
+      const secondContent = await fs.promises.readFile(outputPath, 'utf-8');
+      expect(secondContent).toBe(firstContent);
+    });
+
+    it('should build requested targets even when incremental and sources are unchanged', async () => {
+      const config: Config = {
+        version: '1.0',
+        compile: {
+          claude: {
+            max_tokens: 4000,
+            strategy: 'priority',
+            always_include: [],
+          },
+          cursor: {
+            strategy: 'all',
+          },
+        },
+        conflict_resolution: { strategy: 'priority_wins' },
+      };
+
+      const orchestrator = new BuildOrchestrator(tempDir, config, { quiet: true });
+
+      // Initial build only for claude (creates a manifest without cursor outputs)
+      let result = await orchestrator.build({
+        projectRoot: tempDir,
+        targets: ['claude'],
+        force: true,
+      });
+      expect(result.success).toBe(true);
+      expect(await fs.promises.access(path.join(tempDir, 'CLAUDE.md')).then(() => true).catch(() => false)).toBe(true);
+
+      // Incremental build for cursor only should still run (even if sources unchanged)
+      result = await orchestrator.build({
+        projectRoot: tempDir,
+        targets: ['cursor'],
+        force: false,
+      });
+      expect(result.success).toBe(true);
+
+      const cursorDir = path.join(tempDir, '.cursor', 'rules');
+      expect(await fs.promises.access(cursorDir).then(() => true).catch(() => false)).toBe(true);
+      const files = await fs.promises.readdir(cursorDir);
+      expect(files.some((f) => f.endsWith('.mdc'))).toBe(true);
+    });
+
+    it('should self-heal when compiled outputs drift but sources do not', async () => {
+      const config: Config = {
+        version: '1.0',
+        compile: {
+          claude: {
+            max_tokens: 4000,
+            strategy: 'priority',
+            always_include: [],
+          },
+        },
+        conflict_resolution: { strategy: 'priority_wins' },
+      };
+
+      const orchestrator = new BuildOrchestrator(tempDir, config, { quiet: true });
+
+      // First build
+      let result = await orchestrator.build({
+        projectRoot: tempDir,
+        targets: ['claude'],
+        force: true,
+      });
+      expect(result.success).toBe(true);
+
+      // Tamper with CLAUDE.md directly (sources unchanged)
+      const claudePath = path.join(tempDir, 'CLAUDE.md');
+      const original = await fs.promises.readFile(claudePath, 'utf-8');
+      await fs.promises.writeFile(claudePath, original + '\n\nTAMPERED\n', 'utf-8');
+
+      // Incremental build should detect drift and regenerate outputs
+      result = await orchestrator.build({
+        projectRoot: tempDir,
+        targets: ['claude'],
+        force: false,
+      });
+      expect(result.success).toBe(true);
+
+      const healed = await fs.promises.readFile(claudePath, 'utf-8');
+      expect(healed).not.toContain('TAMPERED');
+    });
+
     it('should execute full build pipeline', async () => {
       const config: Config = {
         version: '1.0',
