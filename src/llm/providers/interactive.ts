@@ -119,7 +119,7 @@ export class InteractiveProvider extends BaseLLMProvider {
  * Stdin Provider
  *
  * Reads response from stdin (for piped input).
- * Usage: echo "response" | ctx init --bootstrap --stdin
+ * Usage: echo "response" | ctx bootstrap --provider interactive
  */
 export class StdinProvider extends BaseLLMProvider {
   constructor(config: LLMProviderConfig) {

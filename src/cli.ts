@@ -31,7 +31,9 @@ program
   .option('--no-interactive', 'Run without prompts (use defaults)')
   .option('--wizard', 'Launch guided migration wizard')
   .option('--dry-run', 'Show what would happen without making changes')
-  .option('-b, --bootstrap', 'Analyze codebase and generate LLM prompt for rule creation')
+  // Back-compat: init runs bootstrap by default, but keep --bootstrap flag accepted.
+  .option('-b, --bootstrap', 'Run LLM bootstrap after init (default)')
+  .option('--no-bootstrap', 'Skip LLM bootstrap (only create templates)')
   .action(async (options) => {
     try {
       const exitCode = await runInit({
@@ -53,6 +55,7 @@ program
   .command('build')
   .description('Compile rules into target formats')
   .option('-i, --incremental', 'Only rebuild changed files')
+  .option('--check', 'Check whether compiled outputs are up to date (no writes)')
   .option('-v, --verbose', 'Show detailed output')
   .option('-q, --quiet', 'Suppress output except errors')
   .option('--skip-validation', 'Skip validation step')
@@ -62,6 +65,7 @@ program
     try {
       const exitCode = await runBuild({
         incremental: options.incremental,
+        check: options.check,
         verbose: options.verbose,
         quiet: options.quiet,
         skipValidation: options.skipValidation,

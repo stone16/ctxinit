@@ -60,7 +60,9 @@ function calculateChecksum(content: string): string {
     /\n<!-- ctx build metadata -->\n<!-- timestamp: [^\n]+ -->\n<!-- checksum: sha256:[a-f0-9]{64} -->\s*$/,
     ''
   );
-  const hash = crypto.createHash('sha256').update(cleanContent).digest('hex');
+  // Normalize line endings so checksums are stable across environments (e.g., CRLF vs LF).
+  const normalized = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const hash = crypto.createHash('sha256').update(normalized).digest('hex');
   return `sha256:${hash}`;
 }
 

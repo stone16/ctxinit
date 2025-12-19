@@ -223,4 +223,42 @@ description: Second rule
     });
     expect(exitCode).toBe(0);
   });
+
+  it('should support check mode (up-to-date verification)', async () => {
+    // Create valid rule
+    await fs.promises.writeFile(
+      path.join(rulesDir, 'valid.md'),
+      `---
+id: valid-rule
+description: A valid test rule
+priority: 50
+---
+
+# Valid Rule
+
+This is valid content.
+`
+    );
+
+    // Check should fail before outputs exist
+    let exitCode = await runBuild({ quiet: true, check: true });
+    expect(exitCode).toBe(1);
+
+    // Build outputs
+    exitCode = await runBuild({ quiet: true });
+    expect(exitCode).toBe(0);
+
+    // Check should pass once outputs are generated
+    exitCode = await runBuild({ quiet: true, check: true });
+    expect(exitCode).toBe(0);
+
+    // Changing project.md should make outputs out of date
+    await fs.promises.writeFile(
+      path.join(contextDir, 'project.md'),
+      '# Test Project\n\nProject description changed.'
+    );
+
+    exitCode = await runBuild({ quiet: true, check: true });
+    expect(exitCode).toBe(1);
+  });
 });

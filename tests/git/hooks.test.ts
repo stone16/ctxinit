@@ -21,13 +21,13 @@ describe('Pre-commit Hook Generation', () => {
       expect(hook).toContain('CLAUDE.md');
       expect(hook).toContain('AGENTS.md');
       expect(hook).toContain('.cursor/rules');
-      expect(hook).toContain('git add');
+      expect(hook).toContain('git add -A');
     });
 
     it('should not include auto-stage when autoStage is false', () => {
       const hook = generatePreCommitHook({ autoStage: false });
 
-      expect(hook).not.toContain('git add CLAUDE.md');
+      expect(hook).not.toContain('git add -A "CLAUDE.md"');
     });
 
     it('should include verbose flag when verbose is true', () => {
@@ -90,7 +90,7 @@ describe('Pre-commit Hook Generation', () => {
       expect(hook).toContain('ctx build --incremental');
 
       // Should have auto-stage commands
-      expect(hook).toContain('git add');
+      expect(hook).toContain('git add -A');
     });
   });
 
@@ -106,7 +106,7 @@ describe('Pre-commit Hook Generation', () => {
 
       expect(hook).toContain('--incremental');
       expect(hook).toContain('--verbose');
-      expect(hook).toContain('git add');
+      expect(hook).toContain('git add -A');
     });
 
     it('should handle conflicting options (verbose and quiet)', () => {

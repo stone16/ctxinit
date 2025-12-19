@@ -9,6 +9,7 @@
  * - Error handling and recovery
  */
 
+import * as fs from 'fs';
 import * as path from 'path';
 import { Config, BuildTarget } from '../schemas/config';
 import { loadConfig } from '../config/loader';
@@ -20,6 +21,7 @@ import { AgentsCompiler } from '../compiler/agents-compiler';
 import { CompilationResult, CompilerContext } from '../compiler/base-compiler';
 import {
   readManifest,
+  BuildManifest,
   writeManifest,
   detectChanges,
   updateManifest,
@@ -28,6 +30,29 @@ import {
 } from './manifest';
 import { transaction, PendingWrite, cleanupStaleTempFiles } from './atomic';
 import { withLock } from './lock';
+
+const BUILD_METADATA_FOOTER_REGEX =
+  /\n<!-- ctx build metadata -->\n<!-- timestamp: [^\n]+ -->\n<!-- checksum: sha256:[a-f0-9]{64} -->\s*$/;
+
+const EMBEDDED_CHECKSUM_REGEX = /<!--\s*checksum:\s*(sha256:[a-f0-9]{64})\s*-->/i;
+
+function normalizeNewlines(content: string): string {
+  return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+function stripBuildMetadataFooter(content: string): string {
+  const withoutFooter = content.replace(BUILD_METADATA_FOOTER_REGEX, '');
+  return normalizeNewlines(withoutFooter);
+}
+
+function hasBuildMetadataFooter(content: string): boolean {
+  return BUILD_METADATA_FOOTER_REGEX.test(content);
+}
+
+function extractEmbeddedChecksum(content: string): string | null {
+  const match = content.match(EMBEDDED_CHECKSUM_REGEX);
+  return match ? match[1] : null;
+}
 
 /**
  * Build options
@@ -39,6 +64,8 @@ export interface BuildOptions {
   targets?: BuildTarget[];
   /** Force full rebuild (ignore incremental) */
   force?: boolean;
+  /** Check if outputs are up to date (no writes) */
+  check?: boolean;
   /** Verbose output */
   verbose?: boolean;
   /** Quiet mode (minimal output) */
@@ -148,6 +175,18 @@ export class BuildOrchestrator {
         result.stats.rulesProcessed = rules.length;
         this.log(`Found ${rules.length} rules`);
 
+        const targets = options.targets || this.getDefaultTargets();
+
+        // Track all relevant source files for incremental builds
+        const sourceFiles: string[] = rules.map(r => r.absolutePath);
+        const projectMdPath = path.join(this.projectRoot, '.context', 'project.md');
+        const architectureMdPath = path.join(this.projectRoot, '.context', 'architecture.md');
+        const configYamlPath = path.join(this.projectRoot, '.context', 'config.yaml');
+
+        if (await fileExists(projectMdPath)) sourceFiles.push(projectMdPath);
+        if (await fileExists(architectureMdPath)) sourceFiles.push(architectureMdPath);
+        if (await fileExists(configYamlPath)) sourceFiles.push(configYamlPath);
+
         // Step 2: Static analysis (unless skipped)
         if (!options.skipValidation) {
           this.log('Running static analysis...');
@@ -178,23 +217,31 @@ export class BuildOrchestrator {
 
         if (manifest && !options.force) {
           this.log('Checking for changes...');
-          const ruleFiles = rules.map(r => r.absolutePath);
-          const changes = await detectChanges(this.projectRoot, ruleFiles, manifest);
+          const changes = await detectChanges(this.projectRoot, sourceFiles, manifest);
 
           const changedPaths = new Set([...changes.added, ...changes.modified]);
-          changedRules = rules.filter(r => {
-            const relativePath = path.relative(this.projectRoot, r.absolutePath);
-            return changedPaths.has(relativePath);
-          });
+          changedRules = rules.filter((r) => changedPaths.has(path.relative(this.projectRoot, r.absolutePath)));
 
           result.stats.rulesChanged = changedRules.length;
           result.stats.incremental = true;
 
-          if (changedRules.length === 0 && changes.removed.length === 0) {
-            this.log('No changes detected, skipping compilation');
-            result.success = true;
-            result.stats.duration = Date.now() - startTime;
-            return;
+          const hasAnySourceChanges =
+            changes.added.length > 0 || changes.modified.length > 0 || changes.removed.length > 0;
+
+          if (!options.check && !hasAnySourceChanges) {
+            const okToSkip = await verifyAndHealOutputsForIncrementalSkip(
+              this.projectRoot,
+              targets,
+              manifest,
+              rules.length
+            );
+            if (okToSkip) {
+              this.log('No changes detected, skipping compilation');
+              result.success = true;
+              result.stats.duration = Date.now() - startTime;
+              return;
+            }
+            this.log('No source changes detected, but outputs need regeneration');
           }
 
           this.log(`${changedRules.length} rules changed, ${changes.removed.length} removed`);
@@ -204,9 +251,9 @@ export class BuildOrchestrator {
         }
 
         // Step 4: Compile for each target
-        const targets = options.targets || this.getDefaultTargets();
         const pendingWrites: PendingWrite[] = [];
         const outputDependencies: OutputDependency[] = [];
+        const cursorExpectedOutputs = new Set<string>();
 
         for (const target of targets) {
           this.log(`Compiling for ${target}...`);
@@ -216,6 +263,7 @@ export class BuildOrchestrator {
             projectRoot: this.projectRoot,
             config: this.config,
             rules: rules,
+            writeToDisk: false,
           };
 
           let compilationResult: CompilationResult;
@@ -250,26 +298,83 @@ export class BuildOrchestrator {
           result.errors.push(...compilationResult.errors.map(e => `[${target}] ${e.message}`));
           result.warnings.push(...compilationResult.warnings.map(w => `[${target}] ${w.message}`));
 
-          // Prepare atomic writes
-          for (const output of compilationResult.outputs) {
-            pendingWrites.push({
-              targetPath: output.path,
-              content: output.content,
-            });
+          // Track expected cursor outputs for cleanup/check
+          if (target === 'cursor') {
+            for (const output of compilationResult.outputs) {
+              cursorExpectedOutputs.add(output.path);
+            }
+          }
 
-            // Track output dependencies
+          // Track output dependencies
+          for (const output of compilationResult.outputs) {
             outputDependencies.push({
-              outputPath: path.relative(this.projectRoot, output.path),
+              outputPath: output.path,
               sourceRules: rules.map(r => path.relative(this.projectRoot, r.absolutePath)),
               generatedAt: Date.now(),
             });
           }
 
-          result.stats.filesGenerated += compilationResult.outputs.length;
           result.stats.totalTokens += compilationResult.stats.totalTokens;
         }
 
-        // Step 5: Atomic write all outputs
+        // Step 5: Compare with disk (check mode) or prepare writes
+        for (const compilationResult of result.compilations.values()) {
+          for (const output of compilationResult.outputs) {
+            const absoluteTargetPath = path.join(this.projectRoot, output.path);
+
+            if (options.check) {
+              const existing = await readFileOrNull(absoluteTargetPath);
+              if (existing === null) {
+                result.errors.push(`[check] Missing output: ${output.path} (run \`ctx build\`)`);
+                continue;
+              }
+
+              const existingNormalized = stripBuildMetadataFooter(existing);
+              const generatedNormalized = stripBuildMetadataFooter(output.content);
+              if (existingNormalized !== generatedNormalized) {
+                result.errors.push(`[check] Output out of date: ${output.path} (run \`ctx build\`)`);
+              }
+              continue;
+            }
+
+            // Normal build: only write if "real content" changed (ignore metadata timestamp churn)
+            const existing = await readFileOrNull(absoluteTargetPath);
+            if (existing !== null) {
+              const existingNormalized = stripBuildMetadataFooter(existing);
+              const generatedNormalized = stripBuildMetadataFooter(output.content);
+              if (existingNormalized === generatedNormalized) {
+                continue;
+              }
+            }
+
+            pendingWrites.push({
+              targetPath: absoluteTargetPath,
+              content: output.content,
+            });
+          }
+        }
+
+        // Check for stale generated Cursor outputs
+        const cursorCompilation = result.compilations.get('cursor');
+        if (targets.includes('cursor') && cursorCompilation?.success) {
+          const stale = await findStaleGeneratedCursorOutputs(
+            this.projectRoot,
+            cursorExpectedOutputs
+          );
+          if (options.check) {
+            for (const stalePath of stale) {
+              result.errors.push(`[check] Stale generated output: ${stalePath} (run \`ctx build\`)`);
+            }
+          }
+        }
+
+        if (options.check) {
+          result.success = result.errors.length === 0;
+          result.stats.duration = Date.now() - startTime;
+          return;
+        }
+
+        // Step 6: Atomic write all outputs
         if (pendingWrites.length > 0) {
           this.log('Writing outputs atomically...');
           const txResult = await transaction(pendingWrites);
@@ -283,16 +388,31 @@ export class BuildOrchestrator {
           }
 
           this.log(`Wrote ${txResult.writtenFiles.length} files`);
+          result.stats.filesGenerated += txResult.writtenFiles.length;
         }
 
-        // Step 6: Update manifest
-        const configContent = JSON.stringify(this.config);
-        const configHash = calculateHash(configContent);
-        const allRulePaths = rules.map(r => r.absolutePath);
+        // Cleanup stale generated Cursor outputs after successful write
+        if (targets.includes('cursor') && cursorCompilation?.success) {
+          const stale = await findStaleGeneratedCursorOutputs(
+            this.projectRoot,
+            cursorExpectedOutputs
+          );
+          for (const stalePath of stale) {
+            try {
+              await fs.promises.unlink(path.join(this.projectRoot, stalePath));
+            } catch {
+              // Ignore cleanup errors
+            }
+          }
+        }
+
+        // Step 7: Update manifest
+        const configHash = await calculateConfigHash(this.projectRoot, this.config);
+        const allSourcePaths = sourceFiles;
 
         const newManifest = await updateManifest(
           this.projectRoot,
-          allRulePaths,
+          allSourcePaths,
           targets.join(','),
           outputDependencies,
           configHash
@@ -346,6 +466,143 @@ export class BuildOrchestrator {
     // Default to claude if no targets configured
     return targets.length > 0 ? targets : ['claude'];
   }
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readFileOrNull(filePath: string): Promise<string | null> {
+  try {
+    return await fs.promises.readFile(filePath, 'utf-8');
+  } catch {
+    return null;
+  }
+}
+
+async function calculateConfigHash(projectRoot: string, config: Config): Promise<string> {
+  const configYamlPath = path.join(projectRoot, '.context', 'config.yaml');
+  const raw = await readFileOrNull(configYamlPath);
+  if (raw !== null) {
+    return calculateHash(raw);
+  }
+  return calculateHash(JSON.stringify(config));
+}
+
+async function verifyGeneratedOutputFile(projectRoot: string, relPath: string): Promise<boolean> {
+  const fullPath = path.join(projectRoot, relPath);
+  const content = await readFileOrNull(fullPath);
+  if (content === null) return false;
+
+  const embedded = extractEmbeddedChecksum(content);
+  if (!embedded) return false;
+
+  const cleanContent = stripBuildMetadataFooter(content);
+  const actual = calculateHash(cleanContent);
+  return embedded === actual;
+}
+
+function filterExpectedOutputsForTargets(
+  targets: BuildTarget[],
+  manifest: BuildManifest
+): Set<string> {
+  const expected = new Set<string>();
+
+  for (const output of manifest.outputs) {
+    const outPath = output.outputPath;
+    if (outPath === 'CLAUDE.md' && targets.includes('claude')) {
+      expected.add(outPath);
+    } else if (outPath === 'AGENTS.md' && targets.includes('agents')) {
+      expected.add(outPath);
+    } else if (outPath.startsWith('.cursor/rules/') && targets.includes('cursor')) {
+      expected.add(outPath);
+    }
+  }
+
+  return expected;
+}
+
+async function verifyAndHealOutputsForIncrementalSkip(
+  projectRoot: string,
+  targets: BuildTarget[],
+  manifest: BuildManifest,
+  ruleCount: number
+): Promise<boolean> {
+  const expected = filterExpectedOutputsForTargets(targets, manifest);
+
+  // If user requests a target that has never been built (no outputs in manifest), we must build.
+  if (targets.includes('claude') && !expected.has('CLAUDE.md')) return false;
+  if (targets.includes('agents') && !expected.has('AGENTS.md')) return false;
+
+  if (targets.includes('cursor')) {
+    const hasAnyCursorOutput = Array.from(expected).some((p) => p.startsWith('.cursor/rules/'));
+    if (ruleCount > 0 && !hasAnyCursorOutput) return false;
+  }
+
+  // Verify expected outputs are present and not tampered with
+  for (const outPath of expected) {
+    if (!(await verifyGeneratedOutputFile(projectRoot, outPath))) {
+      return false;
+    }
+  }
+
+  // Remove stale generated Cursor outputs (e.g., after a previous partial build)
+  if (targets.includes('cursor')) {
+    const expectedCursor = new Set<string>(
+      Array.from(expected).filter((p) => p.startsWith('.cursor/rules/'))
+    );
+    const stale = await findStaleGeneratedCursorOutputs(projectRoot, expectedCursor);
+    if (stale.length > 0) {
+      for (const stalePath of stale) {
+        try {
+          await fs.promises.unlink(path.join(projectRoot, stalePath));
+        } catch {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+async function findStaleGeneratedCursorOutputs(
+  projectRoot: string,
+  expected: Set<string>
+): Promise<string[]> {
+  const cursorRulesDir = path.join(projectRoot, '.cursor', 'rules');
+  const stale: string[] = [];
+
+  if (!(await fileExists(cursorRulesDir))) {
+    return stale;
+  }
+
+  let entries: string[];
+  try {
+    entries = await fs.promises.readdir(cursorRulesDir);
+  } catch {
+    return stale;
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith('.mdc')) continue;
+    const relPath = `.cursor/rules/${entry}`;
+
+    if (expected.has(relPath)) continue;
+
+    const fullPath = path.join(projectRoot, relPath);
+    const content = await readFileOrNull(fullPath);
+    if (content && hasBuildMetadataFooter(content)) {
+      stale.push(relPath);
+    }
+  }
+
+  return stale;
 }
 
 /**

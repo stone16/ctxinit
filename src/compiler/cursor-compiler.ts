@@ -65,8 +65,11 @@ export class CursorCompiler extends BaseCompiler {
       });
     }
 
-    // Ensure output directory exists
-    this.ensureDirectory('.cursor/rules');
+    const shouldWriteToDisk = this.context.writeToDisk !== false;
+    if (shouldWriteToDisk) {
+      // Ensure output directory exists
+      this.ensureDirectory('.cursor/rules');
+    }
 
     // Compile each rule to a separate .mdc file
     let totalTokens = 0;
@@ -77,8 +80,10 @@ export class CursorCompiler extends BaseCompiler {
         outputs.push(output);
         totalTokens += output.tokens;
 
-        // Write output file
-        this.writeOutput(output.path, output.content);
+        // Write output file (optional)
+        if (shouldWriteToDisk) {
+          this.writeOutput(output.path, output.content);
+        }
       } catch (error) {
         errors.push({
           type: 'write_error',

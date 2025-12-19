@@ -68,30 +68,28 @@ fi
 
 ${
   autoStage
-    ? `# Stage compiled outputs
-OUTPUTS_TO_STAGE=""
+    ? `# Stage compiled outputs (including deletions)
+STAGED_ANY=0
 
-# Check for CLAUDE.md
+# Stage CLAUDE.md
 if [ -f "CLAUDE.md" ]; then
-  OUTPUTS_TO_STAGE="$OUTPUTS_TO_STAGE CLAUDE.md"
+  git add -A "CLAUDE.md"
+  STAGED_ANY=1
 fi
 
-# Check for AGENTS.md
+# Stage AGENTS.md
 if [ -f "AGENTS.md" ]; then
-  OUTPUTS_TO_STAGE="$OUTPUTS_TO_STAGE AGENTS.md"
+  git add -A "AGENTS.md"
+  STAGED_ANY=1
 fi
 
-# Check for .cursor/rules/*.mdc files
+# Stage .cursor/rules (handles additions/modifications/deletions)
 if [ -d ".cursor/rules" ]; then
-  MDC_FILES=$(find .cursor/rules -name "*.mdc" 2>/dev/null)
-  if [ -n "$MDC_FILES" ]; then
-    OUTPUTS_TO_STAGE="$OUTPUTS_TO_STAGE $MDC_FILES"
-  fi
+  git add -A ".cursor/rules"
+  STAGED_ANY=1
 fi
 
-# Stage the files if any exist
-if [ -n "$OUTPUTS_TO_STAGE" ]; then
-  git add $OUTPUTS_TO_STAGE
+if [ $STAGED_ANY -eq 1 ]; then
   ${!quiet ? 'echo "✅ Staged compiled context files"' : ''}
 fi`
     : '# Auto-staging disabled'
@@ -140,9 +138,9 @@ fi
 ${
   autoStage
     ? `# Stage outputs
-[ -f "CLAUDE.md" ] && git add CLAUDE.md
-[ -f "AGENTS.md" ] && git add AGENTS.md
-[ -d ".cursor/rules" ] && git add .cursor/rules/*.mdc 2>/dev/null`
+[ -f "CLAUDE.md" ] && git add -A "CLAUDE.md"
+[ -f "AGENTS.md" ] && git add -A "AGENTS.md"
+[ -d ".cursor/rules" ] && git add -A ".cursor/rules" 2>/dev/null`
     : ''
 }
 

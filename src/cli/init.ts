@@ -13,7 +13,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { DEFAULT_CONFIG } from '../schemas/config';
 import yaml from 'yaml';
-import { runBootstrap } from './bootstrap';
+import { runEnhancedBootstrap } from '../bootstrap';
 
 /**
  * Init command options
@@ -27,7 +27,7 @@ export interface InitOptions {
   wizard?: boolean;
   /** Dry run mode - show what would happen */
   dryRun?: boolean;
-  /** Run bootstrap to analyze codebase and generate LLM prompt */
+  /** Run enhanced bootstrap (LLM-powered context generation) after init (default: true) */
   bootstrap?: boolean;
 }
 
@@ -259,42 +259,19 @@ export async function runInit(options: InitOptions): Promise<number> {
     }
   }
 
-  // Bootstrap option - analyze codebase and generate LLM prompt
-  let shouldBootstrap = options.bootstrap;
+  const shouldBootstrap = options.bootstrap !== false && !options.dryRun;
 
-  if (shouldBootstrap === undefined && options.interactive !== false && !options.dryRun) {
-    const bootstrapAnswer = await inquirer.prompt<{ bootstrap: boolean }>([
-      {
-        type: 'confirm',
-        name: 'bootstrap',
-        message: 'Analyze codebase and generate LLM prompt for rule creation?',
-        default: true,
-      },
-    ]);
-    shouldBootstrap = bootstrapAnswer.bootstrap;
+  if (shouldBootstrap) {
+    const result = await runEnhancedBootstrap(projectRoot, { autoBuild: true });
+    return result.success ? 0 : 1;
   }
 
-  if (shouldBootstrap && !options.dryRun) {
-    const { prompt } = await runBootstrap(projectRoot);
-
-    // Save the prompt to a file
-    const promptPath = path.join(projectRoot, '.context', 'bootstrap-prompt.md');
-    await fs.promises.writeFile(promptPath, prompt, 'utf-8');
-
-    console.log(chalk.green('\n✅ Bootstrap complete!'));
-    console.log(chalk.gray('   LLM prompt saved to: .context/bootstrap-prompt.md'));
-    console.log(chalk.blue('\n📝 Next steps:'));
-    console.log(chalk.gray('   1. Copy .context/bootstrap-prompt.md content to your LLM'));
-    console.log(chalk.gray('   2. Save generated rules to .context/rules/'));
-    console.log(chalk.gray('   3. Run: ctx build'));
-  } else {
-    // Standard next steps
-    console.log(chalk.blue('\n📝 Next steps:'));
-    console.log(chalk.gray('   1. Edit .context/project.md with your project info'));
-    console.log(chalk.gray('   2. Add rules to .context/rules/'));
-    console.log(chalk.gray('   3. Run: ctx build'));
-    console.log(chalk.gray('\n   Tip: Use --bootstrap to generate LLM-assisted rules'));
-  }
+  // Standard next steps
+  console.log(chalk.blue('\n📝 Next steps:'));
+  console.log(chalk.gray('   1. Edit .context/project.md with your project info'));
+  console.log(chalk.gray('   2. Add rules to .context/rules/'));
+  console.log(chalk.gray('   3. Run: ctx build'));
+  console.log(chalk.gray('\n   Tip: Run `ctx bootstrap --auto-build` to generate rules with an LLM'));
 
   return 0;
 }
