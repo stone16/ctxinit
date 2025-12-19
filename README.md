@@ -152,6 +152,7 @@ ctx init [options]
 
 Options:
 - `--force`: Overwrite existing .context directory (creates backup)
+- `--bootstrap, -b`: Run LLM bootstrap after init (default)
 - `--no-bootstrap`: Skip LLM bootstrap (only create templates)
 - `--no-interactive`: Run without prompts (use defaults)
 - `--wizard`: Launch guided migration wizard

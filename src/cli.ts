@@ -31,6 +31,8 @@ program
   .option('--no-interactive', 'Run without prompts (use defaults)')
   .option('--wizard', 'Launch guided migration wizard')
   .option('--dry-run', 'Show what would happen without making changes')
+  // Back-compat: init runs bootstrap by default, but keep --bootstrap flag accepted.
+  .option('-b, --bootstrap', 'Run LLM bootstrap after init (default)')
   .option('--no-bootstrap', 'Skip LLM bootstrap (only create templates)')
   .action(async (options) => {
     try {
