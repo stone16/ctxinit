@@ -64,7 +64,7 @@ ctx build --check
 
 After initialization, your project will have:
 
-```
+```text
 .context/
   config.yaml       # Main configuration file
   project.md        # Project description (required)
@@ -379,7 +379,7 @@ ctx build --verbose
 
 ### Project Structure
 
-```
+```text
 ctxinit/
 ├── bin/                  # CLI entry point
 │   └── ctx.js
