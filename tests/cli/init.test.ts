@@ -86,7 +86,9 @@ describe('Init Command', () => {
       expect(fs.existsSync(path.join(tempDir, '.context', 'project.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'architecture.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'config.yaml'))).toBe(true);
-      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'example.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'code-style.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'testing.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'security.md'))).toBe(true);
     });
 
     it('should generate config for all agents', async () => {

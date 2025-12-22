@@ -149,7 +149,9 @@ export async function initializeContext(
   const templates: TemplateFile[] = [
     { source: 'project.md', target: path.join(contextDir, 'project.md') },
     { source: 'architecture.md', target: path.join(contextDir, 'architecture.md') },
-    { source: 'rules/example.md', target: path.join(rulesDir, 'example.md') },
+    { source: 'rules/example.md', target: path.join(rulesDir, 'code-style.md') },
+    { source: 'rules/testing.md', target: path.join(rulesDir, 'testing.md') },
+    { source: 'rules/security.md', target: path.join(rulesDir, 'security.md') },
   ];
 
   // Write template files

@@ -1,44 +1,85 @@
 # Project Context
 
-<!-- This file provides global context about your project for AI assistants -->
+<!-- Replace with your project name and description -->
 
-## Overview
+A brief description of what this project does and its purpose.
 
-<!-- Describe your project in 2-3 sentences -->
+## Stack
 
-## Tech Stack
+- **Language**: TypeScript / JavaScript
+- **Framework**: <!-- e.g., React, Next.js, Express, NestJS -->
+- **Database**: <!-- e.g., PostgreSQL, MongoDB, SQLite -->
+- **Build**: npm / yarn
+- **Testing**: Jest
 
-<!-- List primary technologies, frameworks, and tools -->
+## Architecture
 
-- Language:
-- Framework:
-- Database:
-- Build Tool:
-
-## Key Directories
-
-<!-- Explain important directories in your project -->
-
+```text
+project/
+├── src/               # Application source code
+│   ├── components/    # UI components (if applicable)
+│   ├── services/      # Business logic
+│   ├── utils/         # Shared utilities
+│   └── types/         # TypeScript type definitions
+├── tests/             # Test files
+├── docs/              # Documentation
+└── config/            # Configuration files
 ```
-src/           # Source code
-tests/         # Test files
-docs/          # Documentation
-```
 
-## Coding Standards
-
-<!-- Summarize key coding conventions -->
-
-- Follow existing patterns in the codebase
-- Write tests for new features
-- Keep functions focused and small
-
-## Common Commands
-
-<!-- List frequently used commands -->
+## Commands
 
 ```bash
-npm run dev     # Start development server
-npm run test    # Run tests
-npm run build   # Build for production
+# Development
+npm run dev            # Start development server
+
+# Testing
+npm test               # Run tests
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Run tests with coverage
+
+# Build & Quality
+npm run build          # Build for production
+npm run lint           # Run linter
+npm run format         # Format code
 ```
+
+## Key Patterns
+
+### Error Handling
+
+```typescript
+// Use Result type for operations that can fail
+type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+
+function parseConfig(input: string): Result<Config> {
+  try {
+    return { success: true, data: JSON.parse(input) };
+  } catch (e) {
+    return { success: false, error: e as Error };
+  }
+}
+```
+
+### Naming Conventions
+
+- Files: `kebab-case.ts` (e.g., `user-service.ts`)
+- Classes: `PascalCase` (e.g., `UserService`)
+- Functions: `camelCase` (e.g., `getUserById`)
+- Constants: `SCREAMING_SNAKE_CASE` (e.g., `MAX_RETRIES`)
+
+## Do NOT
+
+- Do NOT commit secrets or API keys to the repository
+- Do NOT use `any` type unless absolutely necessary
+- Do NOT skip error handling for async operations
+- Do NOT modify auto-generated files directly
+- Do NOT import from parent directories (`../../../`)
+
+## Progressive Disclosure
+
+| Task | Reference |
+|------|-----------|
+| Architecture details | `.context/architecture.md` |
+| Coding standards | `.context/rules/` |
+| API documentation | `docs/api/` |
+| Contributing guide | `CONTRIBUTING.md` |

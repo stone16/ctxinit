@@ -1,35 +1,101 @@
 # Architecture Overview
 
-<!-- This file describes your project's architecture for AI assistants -->
-
 ## System Design
 
-<!-- Describe the high-level architecture -->
+<!-- Describe the high-level architecture pattern -->
+
+This project follows a **layered architecture** with clear separation of concerns:
+
+```text
+┌─────────────────────────────────────────┐
+│              Presentation               │  ← UI / API endpoints
+├─────────────────────────────────────────┤
+│            Business Logic               │  ← Services / Use cases
+├─────────────────────────────────────────┤
+│             Data Access                 │  ← Repositories / Data sources
+├─────────────────────────────────────────┤
+│              Database                   │  ← Persistence layer
+└─────────────────────────────────────────┘
+```
 
 ## Component Structure
 
-<!-- Explain how components are organized -->
+### Core Modules
 
-## Data Flow
+| Module | Responsibility | Location |
+|--------|----------------|----------|
+| API | HTTP endpoints and routing | `src/api/` |
+| Services | Business logic and orchestration | `src/services/` |
+| Models | Data models and validation | `src/models/` |
+| Utils | Shared utility functions | `src/utils/` |
 
-<!-- Describe how data moves through the system -->
+### Data Flow
 
-## Key Patterns
+```text
+Request → Controller → Service → Repository → Database
+                ↓
+           Validation
+                ↓
+        Business Logic
+                ↓
+           Response
+```
 
-<!-- Document important design patterns used -->
+## Key Dependencies
 
-### Pattern 1: [Name]
+| Dependency | Purpose | Version |
+|------------|---------|---------|
+| <!-- package --> | <!-- purpose --> | <!-- version --> |
 
-<!-- Description and usage -->
+## Design Decisions
 
-## Dependencies
+### Why [Pattern/Technology]
 
-<!-- List external dependencies and their purposes -->
+<!-- Document key architectural decisions and their rationale -->
+
+**Decision**: Use [approach]
+
+**Context**: [What problem were we solving]
+
+**Consequences**:
+- Pro: [benefit]
+- Con: [tradeoff]
 
 ## Security Considerations
 
-<!-- Note any security-related architectural decisions -->
+- All user input is validated before processing
+- Authentication uses [JWT/Session/OAuth]
+- Sensitive data is encrypted at rest
+- API rate limiting is enabled
 
 ## Performance Considerations
 
-<!-- Document performance-related architectural choices -->
+- Database queries are indexed for common access patterns
+- Caching layer for frequently accessed data
+- Async operations for I/O-bound tasks
+- Connection pooling for database access
+
+## Error Handling Strategy
+
+```typescript
+// Errors bubble up with context
+class AppError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public statusCode: number = 500
+  ) {
+    super(message);
+  }
+}
+
+// Centralized error handling at API boundary
+```
+
+## Testing Strategy
+
+| Type | Location | Purpose |
+|------|----------|---------|
+| Unit | `tests/unit/` | Test individual functions |
+| Integration | `tests/integration/` | Test component interactions |
+| E2E | `tests/e2e/` | Test complete user flows |
