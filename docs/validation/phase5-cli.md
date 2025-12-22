@@ -89,6 +89,7 @@ Validate rules without building.
 ```json
 {
   "success": false,
+  "rulesLinted": 5,
   "errors": [
     {
       "type": "missing_field",
@@ -103,12 +104,7 @@ Validate rules without building.
       "message": "Globs match no files: **/nonexistent/**",
       "path": "rules/unused.md"
     }
-  ],
-  "stats": {
-    "filesChecked": 5,
-    "errorsFound": 1,
-    "warningsFound": 1
-  }
+  ]
 }
 ```
 
