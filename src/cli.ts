@@ -52,7 +52,7 @@ program
 
 // Build command
 program
-  .command('build')
+  .command('build [targets...]')
   .description('Compile rules into target formats')
   .option('-i, --incremental', 'Only rebuild changed files')
   .option('--check', 'Check whether compiled outputs are up to date (no writes)')
@@ -61,8 +61,16 @@ program
   .option('--skip-validation', 'Skip validation step')
   .option('--force', 'Force full rebuild')
   .option('-t, --target <targets...>', 'Specific targets to build (claude, cursor, agents)')
-  .action(async (options) => {
+  .action(async (targets, options) => {
     try {
+      let targetArgs: string[] | undefined = options.target;
+      if (!targetArgs || targetArgs.length === 0) {
+        if (Array.isArray(targets)) {
+          targetArgs = targets.length > 0 ? targets : undefined;
+        } else if (targets) {
+          targetArgs = [targets];
+        }
+      }
       const exitCode = await runBuild({
         incremental: options.incremental,
         check: options.check,
@@ -70,7 +78,7 @@ program
         quiet: options.quiet,
         skipValidation: options.skipValidation,
         force: options.force,
-        target: options.target,
+        target: targetArgs,
       });
       process.exit(exitCode);
     } catch (error) {
@@ -79,6 +87,24 @@ program
     }
   });
 
+const runLintCommand = async (
+  files: string[] = [],
+  options: { json?: boolean; verbose?: boolean; quiet?: boolean }
+) => {
+  try {
+    const exitCode = await runLint({
+      json: options.json,
+      verbose: options.verbose,
+      quiet: options.quiet,
+      files: files.length > 0 ? files : undefined,
+    });
+    process.exit(exitCode);
+  } catch (error) {
+    console.error('Error:', (error as Error).message);
+    process.exit(2);
+  }
+};
+
 // Lint command
 program
   .command('lint [files...]')
@@ -86,20 +112,16 @@ program
   .option('--json', 'Output in JSON format')
   .option('-v, --verbose', 'Show detailed output')
   .option('-q, --quiet', 'Suppress output except errors')
-  .action(async (files, options) => {
-    try {
-      const exitCode = await runLint({
-        json: options.json,
-        verbose: options.verbose,
-        quiet: options.quiet,
-        files: files.length > 0 ? files : undefined,
-      });
-      process.exit(exitCode);
-    } catch (error) {
-      console.error('Error:', (error as Error).message);
-      process.exit(2);
-    }
-  });
+  .action(runLintCommand);
+
+// Validate command (alias for lint)
+program
+  .command('validate [files...]')
+  .description('Alias for lint: validate rules without building')
+  .option('--json', 'Output in JSON format')
+  .option('-v, --verbose', 'Show detailed output')
+  .option('-q, --quiet', 'Suppress output except errors')
+  .action(runLintCommand);
 
 // Verify command
 program

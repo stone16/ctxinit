@@ -167,15 +167,19 @@ ctx build [targets...] [options]
 ```
 
 Options:
+- `-i, --incremental`: Only rebuild changed files
 - `--force`: Force full rebuild
 - `--skip-validation`: Skip rule validation
 - `--check`: Check whether outputs are up to date (no writes)
-- `--verbose, -v`: Verbose output
+- `-t, --target <targets...>`: Specific targets to build (claude, cursor, agents)
+- `-v, --verbose`: Verbose output
+- `-q, --quiet`: Suppress output except errors
 
 Examples:
 ```bash
 ctx build                    # Build all targets
 ctx build claude cursor      # Build specific targets
+ctx build --target claude    # Build specific targets (flag)
 ctx build --check            # Check outputs match sources
 ```
 
@@ -184,43 +188,41 @@ ctx build --check            # Check outputs match sources
 Verify compiled output integrity using checksums.
 
 ```bash
-ctx verify [file] [options]
+ctx verify [options]
 ```
 
 Options:
 - `--json`: Output in JSON format
-- `--verbose, -v`: Show detailed information
+- `-v, --verbose`: Show detailed information
 
 Examples:
 ```bash
 ctx verify                   # Verify all outputs
-ctx verify CLAUDE.md         # Verify specific file
 ctx verify --json            # JSON output
+ctx verify --verbose         # Detailed output
 ```
 
-### `ctx validate`
+### `ctx lint`
 
-Validate rules and configuration without building.
-
-```bash
-ctx validate [options]
-```
-
-Options:
-- `--fix`: Auto-fix simple issues
-- `--verbose, -v`: Show all validation details
-
-### `ctx stats`
-
-Show project statistics.
+Validate rules without building. Alias: `ctx validate`.
 
 ```bash
-ctx stats [options]
+ctx lint [files...] [options]
 ```
 
 Options:
 - `--json`: Output in JSON format
-- `--verbose, -v`: Show detailed breakdown
+- `-v, --verbose`: Show detailed output
+- `-q, --quiet`: Suppress output except errors
+
+Examples:
+```bash
+ctx lint                      # Lint all rules
+ctx lint .context/rules/foo.md # Lint specific files
+ctx validate --json           # Alias
+```
+
+Additional commands: `ctx diff`, `ctx migrate`, `ctx hooks`, `ctx bootstrap` (see `ctx --help`).
 
 ## Output Formats
 
