@@ -154,9 +154,34 @@ Options:
 - `--force`: Overwrite existing .context directory (creates backup)
 - `--bootstrap, -b`: Run LLM bootstrap after init (default)
 - `--no-bootstrap`: Skip LLM bootstrap (only create templates)
+- `--bootstrap-prompt <text>`: Extra bootstrap guidance appended to the LLM prompt
+- `--bootstrap-prompt-file <path>`: Read extra bootstrap guidance from a file
 - `--no-interactive`: Run without prompts (use defaults)
 - `--wizard`: Launch guided migration wizard
 - `--dry-run`: Show what would happen without making changes
+
+### `ctx bootstrap`
+
+Generate/refresh `.context/` using LLM analysis (and optionally run build).
+
+```bash
+ctx bootstrap [options]
+```
+
+Options:
+- `--provider <type>`: LLM provider to use (auto-detect if not specified)
+- `--bootstrap-prompt <text>`: Extra bootstrap guidance appended to the LLM prompt
+- `--bootstrap-prompt-file <path>`: Read extra bootstrap guidance from a file
+- `--auto-build`: Automatically run `ctx build` after bootstrap
+- `--analyze-only`: Only analyze codebase, skip LLM invocation
+- `--skip-validation`: Skip output validation
+- `--dry-run`: Show what would be generated without writing files
+- `-v, --verbose`: Show detailed output including prompt preview
+- `--list-providers`: List available LLM providers
+
+Notes:
+- Put persistent guidance in `.context/bootstrap.md` (created by `ctx init`).
+- `ctx init` writes `.context/.ctxinit-state.json` so bootstrap can detect unedited scaffolds and overwrite them on first run.
 
 ### `ctx build`
 

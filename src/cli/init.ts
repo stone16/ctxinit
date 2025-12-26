@@ -14,6 +14,7 @@ import inquirer from 'inquirer';
 import { DEFAULT_CONFIG } from '../schemas/config';
 import yaml from 'yaml';
 import { runEnhancedBootstrap } from '../bootstrap';
+import { createHash } from 'crypto';
 
 /**
  * Init command options
@@ -29,6 +30,10 @@ export interface InitOptions {
   dryRun?: boolean;
   /** Run enhanced bootstrap (LLM-powered context generation) after init (default: true) */
   bootstrap?: boolean;
+  /** Extra bootstrap guidance appended to the LLM prompt */
+  bootstrapPrompt?: string;
+  /** Read extra bootstrap guidance from a file */
+  bootstrapPromptFile?: string;
 }
 
 /**
@@ -42,6 +47,13 @@ export type AgentSelection = 'cursor' | 'claude' | 'all';
 interface TemplateFile {
   source: string;
   target: string;
+}
+
+interface InitTemplateState {
+  schemaVersion: 1;
+  createdAt: string;
+  ctxinitVersion?: string;
+  templates: Record<string, { source: string; sha256: string }>;
 }
 
 /**
@@ -66,6 +78,10 @@ function readTemplate(templateName: string): string {
   const templatesDir = getTemplatesDir();
   const templatePath = path.join(templatesDir, templateName);
   return fs.readFileSync(templatePath, 'utf-8');
+}
+
+function sha256(content: string): string {
+  return createHash('sha256').update(content, 'utf8').digest('hex');
 }
 
 /**
@@ -135,6 +151,12 @@ export async function initializeContext(
 
   const created: string[] = [];
   const skipped: string[] = [];
+  const templateState: InitTemplateState = {
+    schemaVersion: 1,
+    createdAt: new Date().toISOString(),
+    ctxinitVersion: process.env.npm_package_version,
+    templates: {},
+  };
 
   // Create directories
   const directories = [contextDir, rulesDir];
@@ -149,6 +171,10 @@ export async function initializeContext(
   const templates: TemplateFile[] = [
     { source: 'project.md', target: path.join(contextDir, 'project.md') },
     { source: 'architecture.md', target: path.join(contextDir, 'architecture.md') },
+    { source: 'bootstrap-guidance.md', target: path.join(contextDir, 'bootstrap.md') },
+    { source: 'rules/boundaries.md', target: path.join(rulesDir, 'boundaries.md') },
+    { source: 'rules/agent-output-style.md', target: path.join(rulesDir, 'agent-output-style.md') },
+    { source: 'rules/git-workflow.md', target: path.join(rulesDir, 'git-workflow.md') },
     { source: 'rules/example.md', target: path.join(rulesDir, 'code-style.md') },
     { source: 'rules/testing.md', target: path.join(rulesDir, 'testing.md') },
     { source: 'rules/security.md', target: path.join(rulesDir, 'security.md') },
@@ -164,6 +190,15 @@ export async function initializeContext(
     if (!options.dryRun) {
       const content = readTemplate(template.source);
       await fs.promises.writeFile(template.target, content, 'utf-8');
+
+      const relativeTarget = path
+        .relative(contextDir, template.target)
+        .split(path.sep)
+        .join('/');
+      templateState.templates[relativeTarget] = {
+        source: template.source,
+        sha256: sha256(content),
+      };
     }
     created.push(template.target);
   }
@@ -178,6 +213,37 @@ export async function initializeContext(
     created.push(configPath);
   } else {
     skipped.push(configPath);
+  }
+
+  // Write init template state (used by bootstrap to detect unedited scaffolds)
+  const statePath = path.join(contextDir, '.ctxinit-state.json');
+  if (Object.keys(templateState.templates).length > 0) {
+    const stateExists = fs.existsSync(statePath);
+    if (!options.dryRun) {
+      let mergedState: InitTemplateState = templateState;
+      if (stateExists) {
+        try {
+          const raw = await fs.promises.readFile(statePath, 'utf-8');
+          const parsed = JSON.parse(raw) as Partial<InitTemplateState>;
+          if (parsed && parsed.schemaVersion === 1 && parsed.templates && typeof parsed.templates === 'object') {
+            mergedState = {
+              ...templateState,
+              createdAt: parsed.createdAt || templateState.createdAt,
+              ctxinitVersion: parsed.ctxinitVersion || templateState.ctxinitVersion,
+              templates: { ...parsed.templates, ...templateState.templates },
+            };
+          }
+        } catch {
+          // If parsing fails, overwrite with the new state.
+        }
+      }
+
+      await fs.promises.writeFile(statePath, JSON.stringify(mergedState, null, 2) + '\n', 'utf-8');
+    }
+
+    if (!stateExists) {
+      created.push(statePath);
+    }
   }
 
   return { created, skipped };
@@ -264,7 +330,27 @@ export async function runInit(options: InitOptions): Promise<number> {
   const shouldBootstrap = options.bootstrap !== false && !options.dryRun;
 
   if (shouldBootstrap) {
-    const result = await runEnhancedBootstrap(projectRoot, { autoBuild: true });
+    let bootstrapPrompt = options.bootstrapPrompt;
+    const bootstrapPromptFile = options.bootstrapPromptFile;
+
+    if (options.interactive !== false && !bootstrapPrompt && !bootstrapPromptFile) {
+      const answers = await inquirer.prompt<{ bootstrapPrompt: string }>([
+        {
+          type: 'input',
+          name: 'bootstrapPrompt',
+          message:
+            'Optional: bootstrap guidance (project one-liner / non-negotiables). Leave blank to skip:',
+          default: '',
+        },
+      ]);
+      bootstrapPrompt = answers.bootstrapPrompt.trim() || undefined;
+    }
+
+    const result = await runEnhancedBootstrap(projectRoot, {
+      autoBuild: true,
+      bootstrapPrompt,
+      bootstrapPromptFile,
+    });
     return result.success ? 0 : 1;
   }
 

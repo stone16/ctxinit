@@ -34,6 +34,8 @@ program
   // Back-compat: init runs bootstrap by default, but keep --bootstrap flag accepted.
   .option('-b, --bootstrap', 'Run LLM bootstrap after init (default)')
   .option('--no-bootstrap', 'Skip LLM bootstrap (only create templates)')
+  .option('--bootstrap-prompt <text>', 'Extra bootstrap guidance appended to the LLM prompt')
+  .option('--bootstrap-prompt-file <path>', 'Read extra bootstrap guidance from a file')
   .action(async (options) => {
     try {
       const exitCode = await runInit({
@@ -42,6 +44,8 @@ program
         wizard: options.wizard,
         dryRun: options.dryRun,
         bootstrap: options.bootstrap,
+        bootstrapPrompt: options.bootstrapPrompt,
+        bootstrapPromptFile: options.bootstrapPromptFile,
       });
       process.exit(exitCode);
     } catch (error) {
@@ -227,6 +231,8 @@ program
   .option('--auto-build', 'Automatically run build after bootstrap')
   .option('-v, --verbose', 'Show detailed output including prompts')
   .option('--dry-run', 'Show what would be generated without writing files')
+  .option('--bootstrap-prompt <text>', 'Extra bootstrap guidance appended to the LLM prompt')
+  .option('--bootstrap-prompt-file <path>', 'Read extra bootstrap guidance from a file')
   .option('--list-providers', 'List available LLM providers')
   .action(async (options) => {
     try {
@@ -248,6 +254,8 @@ program
         autoBuild: options.autoBuild,
         verbose: options.verbose,
         dryRun: options.dryRun,
+        bootstrapPrompt: options.bootstrapPrompt,
+        bootstrapPromptFile: options.bootstrapPromptFile,
       });
 
       process.exit(result.success ? 0 : 1);

@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import fg from 'fast-glob';
+import { createHash } from 'crypto';
 
 import {
   LLMProvider,
@@ -51,6 +52,10 @@ export interface BootstrapOptions {
   verbose?: boolean;
   /** Dry run - don't write files */
   dryRun?: boolean;
+  /** Extra bootstrap instructions appended to the prompt */
+  bootstrapPrompt?: string;
+  /** Read extra bootstrap instructions from a file (relative to project root) */
+  bootstrapPromptFile?: string;
 }
 
 /**
@@ -70,9 +75,13 @@ export interface BootstrapResult {
  * Existing context state
  */
 interface ExistingContext {
+  /** Unedited ctx-init scaffolds detected in .context/ (safe to overwrite) */
+  scaffolds: string[];
   projectMd?: string;
   architectureMd?: string;
   existingRules: Array<{ path: string; content: string }>;
+  /** User-provided bootstrap guidance (not compiled into outputs) */
+  bootstrapGuidance?: string;
 }
 
 /**
@@ -107,15 +116,50 @@ export async function runEnhancedBootstrap(
   console.log(chalk.cyan('\nPhase 2: Loading existing context...'));
   const existingContext = await loadExistingContext(projectRoot);
 
-  if (existingContext.projectMd || existingContext.architectureMd || existingContext.existingRules.length > 0) {
-    console.log(chalk.gray('  Found existing context files (will preserve user edits):'));
-    if (existingContext.projectMd) console.log(chalk.gray('    - .context/project.md'));
-    if (existingContext.architectureMd) console.log(chalk.gray('    - .context/architecture.md'));
-    for (const rule of existingContext.existingRules) {
-      console.log(chalk.gray(`    - .context/${rule.path}`));
+  // Merge optional bootstrap prompt sources
+  const guidanceParts: string[] = [];
+  if (existingContext.bootstrapGuidance?.trim()) guidanceParts.push(existingContext.bootstrapGuidance.trim());
+  if (options.bootstrapPromptFile?.trim()) {
+    const filePath = resolveProjectPath(projectRoot, options.bootstrapPromptFile.trim());
+    if (fs.existsSync(filePath)) {
+      guidanceParts.push((await fs.promises.readFile(filePath, 'utf-8')).trim());
+    } else {
+      warnings.push(`Bootstrap prompt file not found: ${options.bootstrapPromptFile}`);
     }
+  }
+  if (options.bootstrapPrompt?.trim()) guidanceParts.push(options.bootstrapPrompt.trim());
+  existingContext.bootstrapGuidance = guidanceParts.filter(Boolean).join('\n\n---\n\n') || undefined;
+
+  const hasUserContext =
+    !!existingContext.projectMd ||
+    !!existingContext.architectureMd ||
+    existingContext.existingRules.length > 0;
+  const hasScaffolds = existingContext.scaffolds.length > 0;
+  const hasGuidance = !!existingContext.bootstrapGuidance?.trim();
+
+  if (!hasUserContext && !hasScaffolds && !hasGuidance) {
+    console.log(chalk.gray('  No existing context found.'));
   } else {
-    console.log(chalk.gray('  No existing context files found.'));
+    if (hasScaffolds) {
+      console.log(chalk.gray('  Found unedited ctx init scaffolds (safe to overwrite):'));
+      for (const file of existingContext.scaffolds) {
+        console.log(chalk.gray(`    - .context/${file}`));
+      }
+    }
+
+    if (hasUserContext) {
+      console.log(chalk.gray('  Found existing user context (preserve intent):'));
+      if (existingContext.projectMd) console.log(chalk.gray('    - .context/project.md'));
+      if (existingContext.architectureMd) console.log(chalk.gray('    - .context/architecture.md'));
+      for (const rule of existingContext.existingRules) {
+        console.log(chalk.gray(`    - .context/${rule.path}`));
+      }
+    }
+
+    if (hasGuidance) {
+      console.log(chalk.gray('  Found bootstrap guidance (applied to generation):'));
+      console.log(chalk.gray('    - (bootstrap guidance text)'));
+    }
   }
 
   // Phase 3: Select LLM provider
@@ -308,19 +352,47 @@ export async function runEnhancedBootstrap(
 async function loadExistingContext(projectRoot: string): Promise<ExistingContext> {
   const contextDir = path.join(projectRoot, '.context');
   const result: ExistingContext = {
+    scaffolds: [],
     existingRules: [],
+  };
+
+  const initState = await loadInitState(contextDir);
+  const isScaffold = (relativeToContextDir: string, content: string): boolean => {
+    const normalized = relativeToContextDir.split(path.sep).join('/');
+    const expected = initState?.templates?.[normalized]?.sha256;
+    if (!expected) return false;
+    return sha256(content) === expected;
   };
 
   // Load project.md
   const projectPath = path.join(contextDir, 'project.md');
   if (fs.existsSync(projectPath)) {
-    result.projectMd = await fs.promises.readFile(projectPath, 'utf-8');
+    const content = await fs.promises.readFile(projectPath, 'utf-8');
+    if (isScaffold('project.md', content)) {
+      result.scaffolds.push('project.md');
+    } else {
+      result.projectMd = content;
+    }
   }
 
   // Load architecture.md
   const archPath = path.join(contextDir, 'architecture.md');
   if (fs.existsSync(archPath)) {
-    result.architectureMd = await fs.promises.readFile(archPath, 'utf-8');
+    const content = await fs.promises.readFile(archPath, 'utf-8');
+    if (isScaffold('architecture.md', content)) {
+      result.scaffolds.push('architecture.md');
+    } else {
+      result.architectureMd = content;
+    }
+  }
+
+  // Optional bootstrap guidance (not compiled into outputs)
+  const bootstrapPath = path.join(contextDir, 'bootstrap.md');
+  if (fs.existsSync(bootstrapPath)) {
+    const content = await fs.promises.readFile(bootstrapPath, 'utf-8');
+    // Always load bootstrap.md as guidance (even if it's the unedited init template),
+    // since ctxinit ships opinionated defaults here.
+    result.bootstrapGuidance = content;
   }
 
   // Load existing rules
@@ -334,14 +406,50 @@ async function loadExistingContext(projectRoot: string): Promise<ExistingContext
     for (const file of ruleFiles) {
       const fullPath = path.join(rulesDir, file);
       const content = await fs.promises.readFile(fullPath, 'utf-8');
-      result.existingRules.push({
-        path: `rules/${file}`,
-        content,
-      });
+      const relToContext = path.join('rules', file);
+      if (isScaffold(relToContext, content)) {
+        result.scaffolds.push(relToContext.split(path.sep).join('/'));
+      } else {
+        result.existingRules.push({
+          path: `rules/${file}`,
+          content,
+        });
+      }
     }
   }
 
   return result;
+}
+
+interface ParsedInitState {
+  schemaVersion: 1;
+  createdAt: string;
+  ctxinitVersion?: string;
+  templates: Record<string, { source: string; sha256: string }>;
+}
+
+function sha256(content: string): string {
+  return createHash('sha256').update(content, 'utf8').digest('hex');
+}
+
+function resolveProjectPath(projectRoot: string, maybeRelativePath: string): string {
+  return path.isAbsolute(maybeRelativePath)
+    ? maybeRelativePath
+    : path.resolve(projectRoot, maybeRelativePath);
+}
+
+async function loadInitState(contextDir: string): Promise<ParsedInitState | null> {
+  const statePath = path.join(contextDir, '.ctxinit-state.json');
+  if (!fs.existsSync(statePath)) return null;
+
+  try {
+    const raw = await fs.promises.readFile(statePath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<ParsedInitState>;
+    if (!parsed || parsed.schemaVersion !== 1 || !parsed.templates) return null;
+    return parsed as ParsedInitState;
+  } catch {
+    return null;
+  }
 }
 
 /**
