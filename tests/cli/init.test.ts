@@ -85,10 +85,34 @@ describe('Init Command', () => {
       // Verify files exist
       expect(fs.existsSync(path.join(tempDir, '.context', 'project.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'architecture.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'bootstrap.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'config.yaml'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', '.ctxinit-state.json'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'boundaries.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'agent-output-style.md'))).toBe(true);
+      expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'git-workflow.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'code-style.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'testing.md'))).toBe(true);
       expect(fs.existsSync(path.join(tempDir, '.context', 'rules', 'security.md'))).toBe(true);
+    });
+
+    it('should write init scaffold state for bootstrap', async () => {
+      await initializeContext(tempDir, 'all');
+
+      const statePath = path.join(tempDir, '.context', '.ctxinit-state.json');
+      const raw = await fs.promises.readFile(statePath, 'utf-8');
+      const parsed = JSON.parse(raw) as { schemaVersion: number; templates: Record<string, unknown> };
+
+      expect(parsed.schemaVersion).toBe(1);
+      expect(parsed.templates['project.md']).toBeDefined();
+      expect(parsed.templates['architecture.md']).toBeDefined();
+      expect(parsed.templates['bootstrap.md']).toBeDefined();
+      expect(parsed.templates['rules/boundaries.md']).toBeDefined();
+      expect(parsed.templates['rules/agent-output-style.md']).toBeDefined();
+      expect(parsed.templates['rules/git-workflow.md']).toBeDefined();
+      expect(parsed.templates['rules/code-style.md']).toBeDefined();
+      expect(parsed.templates['rules/testing.md']).toBeDefined();
+      expect(parsed.templates['rules/security.md']).toBeDefined();
     });
 
     it('should generate config for all agents', async () => {

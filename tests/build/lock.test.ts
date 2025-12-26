@@ -133,10 +133,10 @@ describe('Build Locking', () => {
     });
 
     it('should fail to acquire when lock exists (different process)', async () => {
-      // Create an existing lock from a "different" process
+      // Create an existing lock from a running process (simulate active lock)
       const lockPath = getLockPath(tempDir);
       const existingLock: LockInfo = {
-        pid: process.pid + 1, // Different PID
+        pid: process.pid, // Guaranteed to be running during the test
         timestamp: Date.now(),
         hostname: os.hostname(),
         target: 'cursor',
@@ -278,7 +278,7 @@ describe('Build Locking', () => {
       // Create an existing active lock
       const lockPath = getLockPath(tempDir);
       const activeLock: LockInfo = {
-        pid: process.pid + 1,
+        pid: process.pid, // Guaranteed to be running during the test
         timestamp: Date.now(),
         hostname: os.hostname(),
         target: 'other',

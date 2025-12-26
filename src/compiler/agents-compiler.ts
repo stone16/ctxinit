@@ -198,10 +198,10 @@ export class AgentsCompiler extends BaseCompiler {
           sections.push(`**Domain:** ${rule.frontmatter.domain}\n`);
         }
 
-        // Include summary (first paragraph)
-        const firstParagraph = rule.content.split('\n\n')[0];
-        if (firstParagraph) {
-          sections.push(firstParagraph.trim());
+        // Include summary (skip headings/preamble)
+        const summary = this.getRuleSummaryParagraph(rule);
+        if (summary) {
+          sections.push(summary.trim());
         }
 
         sections.push('');

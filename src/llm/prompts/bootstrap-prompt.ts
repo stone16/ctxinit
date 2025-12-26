@@ -104,9 +104,11 @@ always_apply: false
 export function buildBootstrapUserPrompt(
   analysis: CodebaseAnalysis,
   existingContext?: {
+    scaffolds?: string[];
     projectMd?: string;
     architectureMd?: string;
     existingRules?: Array<{ path: string; content: string }>;
+    bootstrapGuidance?: string;
   }
 ): string {
   const sections: string[] = [];
@@ -173,36 +175,62 @@ ${sample.content}
 
   // Existing Context (to preserve user edits)
   if (existingContext) {
-    sections.push(`
+    if (existingContext.bootstrapGuidance?.trim()) {
+      sections.push(`
+## Bootstrap Guidance (USER-PROVIDED)
+
+These instructions are highest priority for generation. Follow them, but keep outputs machine-actionable and project-specific.
+
+\`\`\`markdown
+${existingContext.bootstrapGuidance.trim()}
+\`\`\``);
+    }
+
+    if (existingContext.scaffolds && existingContext.scaffolds.length > 0) {
+      sections.push(`
+## Unedited ctx init scaffolds (SAFE TO OVERWRITE)
+
+These files exist but appear to be unmodified templates. You MAY rewrite them completely:
+${existingContext.scaffolds.map((p) => `- \`.context/${p}\``).join('\n')}`);
+    }
+
+    const hasUserEdits =
+      !!existingContext.projectMd ||
+      !!existingContext.architectureMd ||
+      (existingContext.existingRules && existingContext.existingRules.length > 0);
+
+    if (hasUserEdits) {
+      sections.push(`
 ## Existing Context Files (PRESERVE USER EDITS)
 
 The user has already created/edited these files. Enhance them while preserving their custom content:`);
 
-    if (existingContext.projectMd) {
-      sections.push(`
+      if (existingContext.projectMd) {
+        sections.push(`
 ### Current .context/project.md
 \`\`\`markdown
 ${existingContext.projectMd}
 \`\`\``);
-    }
+      }
 
-    if (existingContext.architectureMd) {
-      sections.push(`
+      if (existingContext.architectureMd) {
+        sections.push(`
 ### Current .context/architecture.md
 \`\`\`markdown
 ${existingContext.architectureMd}
 \`\`\``);
-    }
+      }
 
-    if (existingContext.existingRules && existingContext.existingRules.length > 0) {
-      sections.push(`
-### Existing Rules (enhance, don't replace):`);
-      for (const rule of existingContext.existingRules) {
+      if (existingContext.existingRules && existingContext.existingRules.length > 0) {
         sections.push(`
+### Existing Rules (enhance, don't replace):`);
+        for (const rule of existingContext.existingRules) {
+          sections.push(`
 #### ${rule.path}
 \`\`\`markdown
 ${rule.content.slice(0, 1000)}${rule.content.length > 1000 ? '\n... (truncated)' : ''}
 \`\`\``);
+        }
       }
     }
   }
@@ -221,6 +249,7 @@ Generate context files for this project. Create:
 - Key directories with purposes
 - Common commands
 ${existingContext?.projectMd ? '- PRESERVE existing user content, enhance with detected info' : ''}
+${existingContext?.scaffolds?.includes('project.md') ? '- project.md is an unedited scaffold; rewrite freely' : ''}
 
 ### 2. Enhanced architecture.md
 - System overview
@@ -228,6 +257,7 @@ ${existingContext?.projectMd ? '- PRESERVE existing user content, enhance with d
 - Data flow patterns
 - Important design decisions
 ${existingContext?.architectureMd ? '- PRESERVE existing user content, enhance with detected info' : ''}
+${existingContext?.scaffolds?.includes('architecture.md') ? '- architecture.md is an unedited scaffold; rewrite freely' : ''}
 
 ### 3. Rules (create these if they don't exist, enhance if they do)
 
@@ -235,6 +265,7 @@ Required rules:
 - \`rules/project-identity.md\` - Mission, tech stack, architecture style
 - \`rules/architecture-map.md\` - Directory structure with purposes
 - \`rules/commands.md\` - Build, test, lint, deploy commands
+- \`rules/agent-output-style.md\` - How the agent should communicate and deliver work
 - \`rules/boundaries.md\` - Do-NOT rules and prohibitions
 - \`rules/git-workflow.md\` - Commit, branch, PR conventions
 
